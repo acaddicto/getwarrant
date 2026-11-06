@@ -1,0 +1,10 @@
+README.md
+pyproject.toml
+tests/test_jcs.py
+warrant_fastapi/__init__.py
+warrant_fastapi/core.py
+warrant_fastapi.egg-info/PKG-INFO
+warrant_fastapi.egg-info/SOURCES.txt
+warrant_fastapi.egg-info/dependency_links.txt
+warrant_fastapi.egg-info/requires.txt
+warrant_fastapi.egg-info/top_level.txt

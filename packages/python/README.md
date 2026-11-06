@@ -1,0 +1,30 @@
+# warrant-fastapi
+
+Require a verified agent mandate on a FastAPI route. Verification runs at the Warrant issuer's hosted verifier (`POST /verify`), which also writes the ledger record, so this package has no cryptography of its own: it parses the two headers, hashes the request body the same way the agent did (RFC 8785 JCS + SHA-256), and maps the verdict to HTTP.
+
+```python
+from fastapi import Depends, FastAPI
+from warrant_fastapi import WarrantVerifier, WarrantResult
+
+app = FastAPI()
+warrant = WarrantVerifier("https://vvnvwrefyrrapjhmpajr.supabase.co/functions/v1/warrant", counterparty="api:booking.com")
+
+@app.post("/hold")
+async def hold(body: dict, w: WarrantResult = Depends(warrant.require("travel:book_hotel"))):
+    return {"held": True, "ledger": w.ledger["ref"], "hop": w.hop}
+```
+
+| Verdict | Response |
+| --- | --- |
+| allow | route runs; `WarrantResult` carries the checks and the ledger ref |
+| confirm | `202 {"error":"confirm","confirm_ref":…,"poll":…}` (or, with `on_confirm="wait"`, polls up to two minutes) |
+| deny | `403 {"error":"<reason>","message":…,"checks":[…]}` |
+| missing headers | `401` |
+
+Agents hash exactly the JSON body they send. If your route hashes something else, pass `describe=lambda req, body: {...}` and publish that convention to agents.
+
+Trade-off against `@getwarrant/node`: the Node verifier runs the checks locally with its own key and trusted roots, so it works even if it distrusts the issuer; this package trusts the issuer's verifier. A native Python verifier is on the list.
+
+```
+pip install -e ".[test]" && pytest
+```

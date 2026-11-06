@@ -101,6 +101,17 @@ describe("verifier: happy paths", () => {
     const v = run({ chain: [tripwise], action: action({ by: keys.tripwise, type: "travel:cancel_own_booking", amount: 0 }) });
     expect(v.decision).toBe("confirm");
   });
+  it("treats a principal-confirmed action as allow without double-counting its amount", () => {
+    const a = action({ amount: 54000 });
+    // After the reply the issuer's spent already includes 54000 (tree total at hop 2 is 60000).
+    const st = status({ spent: 54000 });
+    expect(run({ action: a, status: st }).reason).toBe("over_limit");
+    const v = run({ action: a, status: st }, { ...ctx, confirmedHash: a.hash });
+    expect(v.decision).toBe("allow");
+    expect(v.checks.at(-1)?.detail).toMatch(/already confirmed/);
+    // A different action does not ride on the confirmation.
+    expect(run({ action: action({ amount: 54000, hash: "00".repeat(32) }), status: st }, { ...ctx, confirmedHash: a.hash }).reason).toBe("over_limit");
+  });
   it("is deterministic", () => {
     expect(run()).toEqual(run());
   });

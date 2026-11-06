@@ -4,6 +4,8 @@
 //   GET  /.well-known/warrant.json         issuer identity, keys, endpoints
 //   GET  /roots                            identity roots this issuer accepts
 //   POST /agents                           register an agent signing key   { did, kid, public_key, operator? }
+//   GET  /agents/:did                      an agent's registered public keys (counterparties resolve kids here in v0.1)
+//   POST /verify                           hosted verifier: { chain: [tokens], action, counterparty, confirm? } → verdict, ledger ref
 //   POST /requests                         agent asks for a mandate         { agent, draft, sig }
 //   GET  /requests/:id                     consent UI loads the request
 //   POST /requests/:id/prepare             principal fixes final terms → payload to sign      (principal auth)
@@ -47,7 +49,11 @@ import {
   validateShape,
   verifyJson,
   verify as verifyRaw,
+  verifyAction,
+  buildRecord,
+  signRecordAsVerifier,
   MAX_DEPTH,
+  type Action,
   type KeyPair,
   type LedgerRecord,
   type Mandate,
@@ -91,21 +97,6 @@ async function body<T = any>(req: Request): Promise<T> {
   }
 }
 
-// Key resolution: issuer key, registered agent keys, root keys, and the principal key carried in the mandate itself.
-async function resolver(m?: Mandate): Promise<(kid: string) => Uint8Array | undefined> {
-  const { data: agents } = await db.from("agent_keys").select("kid, public_key");
-  const { data: roots } = await db.from("roots").select("kid, public_key");
-  const map = new Map<string, Uint8Array>();
-  map.set(ISSUER_KEY.kid, ISSUER_KEY.publicKey);
-  for (const a of agents ?? []) map.set(a.kid, unb64url(a.public_key));
-  for (const r of roots ?? []) map.set(r.kid, unb64url(r.public_key));
-  if (m) {
-    // Principal keys in v0.1 are software Ed25519 keys named "key:<b64url pubkey>". WebAuthn/P-256 is the next step.
-    const pk = principalKeyBytes(m.principal.key);
-    if (pk) map.set(m.principal.key, pk);
-  }
-  return (kid) => map.get(kid) ?? principalKeyBytes(kid);
-}
 function principalKeyBytes(kid: string): Uint8Array | undefined {
   if (!kid.startsWith("key:")) return undefined;
   try {
@@ -161,6 +152,37 @@ async function treeStatus(rootRow: any) {
   return status;
 }
 
+// Countersign a verifier's record, append it to the tree's chain, bump spend, open a confirmation if needed.
+async function appendRecord(rec: LedgerRecord, rootId: string) {
+  const signed = signRecordAsIssuer(rec, ISSUER_KEY);
+  const hash = recordHash(signed);
+  const bump = rec.decision === "allow" && rec.action.amount !== undefined;
+  const { data: seq, error } = await db.rpc("append_ledger", {
+    p_ref: rec.ref, p_root_id: rootId, p_mandate_id: rec.mandate.id, p_prev: rec.prev, p_hash: hash,
+    p_decision: rec.decision, p_reason: rec.reason, p_amount: rec.action.amount ?? null, p_counterparty: rec.counterparty,
+    p_record: signed, p_at: new Date(rec.at).toISOString(), p_bump_spend: bump,
+  });
+  if (error) {
+    if (error.message.includes("prev_mismatch")) {
+      const { data: last } = await db.from("ledger").select("hash").eq("root_id", rootId).order("seq", { ascending: false }).limit(1).maybeSingle();
+      throw new HttpError(409, "prev_mismatch", `expected prev ${last?.hash ?? null}`);
+    }
+    if (error.code === "23505") throw new HttpError(409, "duplicate_ref");
+    throw new HttpError(500, "db", error.message);
+  }
+  if (rec.decision === "confirm") {
+    const ref = rec.confirm?.ref ?? "cfm_" + ulid();
+    await db.from("confirmations").insert({ ref, root_id: rootId, mandate_id: rec.mandate.id, ledger_ref: rec.ref, action_type: rec.action.type, amount: rec.action.amount ?? null, counterparty: rec.counterparty, action_hash: rec.action.hash, expires_at: new Date(Date.now() + 15 * 60_000).toISOString() });
+    return { ref: rec.ref, seq, hash, issuer_sig: signed.sig.issuer, confirm_ref: ref, poll: `${PUBLIC_BASE}/confirm/${ref}` };
+  }
+  return { ref: rec.ref, seq, hash, issuer_sig: signed.sig.issuer };
+}
+
+async function lastHash(rootId: string): Promise<string | null> {
+  const { data } = await db.from("ledger").select("hash").eq("root_id", rootId).order("seq", { ascending: false }).limit(1).maybeSingle();
+  return data?.hash ?? null;
+}
+
 // ---------- routes ----------------------------------------------------------
 async function route(req: Request, path: string): Promise<Response> {
   const method = req.method;
@@ -174,7 +196,7 @@ async function route(req: Request, path: string): Promise<Response> {
       issuer: ISSUER_DID,
       spec: "warrant/0.1",
       keys: [{ kid: ISSUER_KEY.kid, alg: "EdDSA", public_key: b64url(ISSUER_KEY.publicKey) }],
-      endpoints: { requests: `${PUBLIC_BASE}/requests`, mandates: `${PUBLIC_BASE}/mandates`, status: `${PUBLIC_BASE}/r/{id}`, ledger: `${PUBLIC_BASE}/l/{id}`, revocations: `${PUBLIC_BASE}/revocations`, confirm: `${PUBLIC_BASE}/confirm/{ref}`, consent: `${CONSENT_BASE}/{request_id}` },
+      endpoints: { requests: `${PUBLIC_BASE}/requests`, mandates: `${PUBLIC_BASE}/mandates`, verify: `${PUBLIC_BASE}/verify`, agents: `${PUBLIC_BASE}/agents/{did}`, status: `${PUBLIC_BASE}/r/{id}`, ledger: `${PUBLIC_BASE}/l/{id}`, revocations: `${PUBLIC_BASE}/revocations`, confirm: `${PUBLIC_BASE}/confirm/{ref}`, consent: `${CONSENT_BASE}/{request_id}` },
       principal_auth: "Authorization: Warrant-Principal <root assertion token>",
     });
   }
@@ -193,6 +215,12 @@ async function route(req: Request, path: string): Promise<Response> {
     const { error } = await db.from("agent_keys").upsert({ did: b.did, kid: b.kid, public_key: b.public_key, operator: b.operator ?? null });
     if (error) throw new HttpError(500, "db", error.message);
     return json(201, { did: b.did, kid: b.kid });
+  }
+  if (method === "GET" && seg[0] === "agents" && seg.length === 2) {
+    const did = decodeURIComponent(seg[1]);
+    const { data } = await db.from("agent_keys").select("kid, public_key, operator").eq("did", did);
+    if (!data?.length) throw new HttpError(404, "not_found", `no keys registered for ${did}`);
+    return json(200, { did, operator: data[0].operator, keys: data.map((k) => ({ kid: k.kid, alg: "EdDSA", public_key: k.public_key })) }, { "cache-control": "public, max-age=300" });
   }
 
   // --- mandate requests ---
@@ -395,6 +423,42 @@ async function route(req: Request, path: string): Promise<Response> {
     return json(200, { ...list, sig: { kid: ISSUER_KEY.kid, value: signJson(list, ISSUER_KEY.secretKey) } }, { "cache-control": "public, max-age=60" });
   }
 
+  // --- hosted verifier ---
+  if (method === "POST" && path === "/verify") {
+    const b = await body<{ chain: (string | Mandate)[]; action: Action; counterparty: string; record?: boolean; confirm?: string }>(req);
+    if (!Array.isArray(b.chain) || !b.chain.length || !b.action || !b.counterparty) throw new HttpError(400, "malformed", "chain[], action and counterparty are required");
+    let chain: Mandate[];
+    try { chain = b.chain.map((c) => (typeof c === "string" ? decodeMandate(c) : c)); } catch (e) { throw new HttpError(400, "malformed", (e as Error).message); }
+    const first = await loadMandate(chain[0].id);
+    const rootRow = first.root_id === first.id ? first : await loadMandate(first.root_id);
+    const status = await treeStatus(rootRow);
+    const { data: agents } = await db.from("agent_keys").select("kid, public_key");
+    const { data: roots } = await db.from("roots").select("id, kid, public_key");
+    const keyMap = new Map<string, Uint8Array>([[ISSUER_KEY.kid, ISSUER_KEY.publicKey]]);
+    for (const a of agents ?? []) keyMap.set(a.kid, unb64url(a.public_key));
+    for (const r of roots ?? []) keyMap.set(r.kid, unb64url(r.public_key));
+    const trustedRoots = Object.fromEntries((roots ?? []).map((r) => [r.id, { publicKey: unb64url(r.public_key) }]));
+    // A retry of an action the principal has confirmed: allow it once, without a second ledger record.
+    let confirmedHash: string | undefined;
+    if (b.confirm) {
+      const { data: c } = await db.from("confirmations").select("state, action_hash, mandate_id").eq("ref", b.confirm).maybeSingle();
+      if (c?.state === "allow" && c.action_hash === b.action.hash && c.mandate_id === chain[chain.length - 1].id) confirmedHash = c.action_hash;
+    }
+    const verdict = verifyAction(
+      { chain, action: b.action, status },
+      { now: nowS(), keys: (kid) => keyMap.get(kid) ?? principalKeyBytes(kid), trustedRoots, issuerId: ISSUER_DID, confirmedHash },
+    );
+    if (b.record === false) return json(200, { verdict });
+    if (confirmedHash && verdict.decision === "allow") return json(200, { verdict, ledger: { ref: b.confirm, seq: -1, hash: "", confirm_ref: b.confirm }, note: "confirmed action; the principal's reply is the ledger record" });
+    // Hop-1 ids not in our store cannot be ledgered; verdicts with a malformed/bad chain still return without a record.
+    if (verdict.reason === "malformed" || verdict.reason === "bad_chain" || verdict.reason === "bad_signature") return json(200, { verdict, ledger: null });
+    const { data: actingRow } = await db.from("mandates").select("id").eq("id", chain[chain.length - 1].id).maybeSingle();
+    if (!actingRow) return json(200, { verdict, ledger: null, note: "acting mandate is not registered with this issuer; register sub-mandates at POST /mandates to get them ledgered" });
+    const rec = signRecordAsVerifier(buildRecord({ verdict, chain, action: b.action, status, counterparty: b.counterparty, prev: await lastHash(rootRow.root_id) }), ISSUER_KEY);
+    const ledger = await appendRecord(rec, rootRow.root_id);
+    return json(200, { verdict, ledger });
+  }
+
   // --- ledger (counterparties) ---
   if (method === "POST" && seg[0] === "l" && seg.length === 2) {
     const rec = await body<LedgerRecord>(req);
@@ -415,28 +479,7 @@ async function route(req: Request, path: string): Promise<Response> {
       const root = await loadMandate(rootId);
       if (root.total_limit !== null && Number(root.spent) + (rec.action.amount ?? 0) > Number(root.total_limit)) throw new HttpError(409, "over_limit", "tree total exceeded");
     }
-    const signed = signRecordAsIssuer(rec, ISSUER_KEY);
-    const hash = recordHash(signed);
-    const bump = rec.decision === "allow" && rec.action.amount !== undefined;
-    const { data: seq, error } = await db.rpc("append_ledger", {
-      p_ref: rec.ref, p_root_id: rootId, p_mandate_id: rec.mandate.id, p_prev: rec.prev, p_hash: hash,
-      p_decision: rec.decision, p_reason: rec.reason, p_amount: rec.action.amount ?? null, p_counterparty: rec.counterparty,
-      p_record: signed, p_at: new Date(rec.at).toISOString(), p_bump_spend: bump,
-    });
-    if (error) {
-      if (error.message.includes("prev_mismatch")) {
-        const { data: last } = await db.from("ledger").select("hash").eq("root_id", rootId).order("seq", { ascending: false }).limit(1).maybeSingle();
-        throw new HttpError(409, "prev_mismatch", `expected prev ${last?.hash ?? null}`);
-      }
-      if (error.code === "23505") throw new HttpError(409, "duplicate_ref");
-      throw new HttpError(500, "db", error.message);
-    }
-    if (rec.decision === "confirm") {
-      const ref = rec.confirm?.ref ?? "cfm_" + ulid();
-      await db.from("confirmations").insert({ ref, root_id: rootId, mandate_id: rec.mandate.id, ledger_ref: rec.ref, action_type: rec.action.type, amount: rec.action.amount ?? null, counterparty: rec.counterparty, action_hash: rec.action.hash, expires_at: new Date(Date.now() + 15 * 60_000).toISOString() });
-      return json(201, { ref: rec.ref, seq, hash, issuer_sig: signed.sig.issuer, confirm_ref: ref, poll: `${PUBLIC_BASE}/confirm/${ref}` });
-    }
-    return json(201, { ref: rec.ref, seq, hash, issuer_sig: signed.sig.issuer });
+    return json(201, await appendRecord(rec, rootId));
   }
 
   // --- confirmations ---
@@ -468,7 +511,7 @@ async function route(req: Request, path: string): Promise<Response> {
     if (b.reply === "allow" && c.amount !== null) {
       await db.rpc("append_ledger", {
         p_ref: "led_" + ulid(), p_root_id: c.root_id, p_mandate_id: c.mandate_id,
-        p_prev: (await db.from("ledger").select("hash").eq("root_id", c.root_id).order("seq", { ascending: false }).limit(1).maybeSingle()).data?.hash ?? null,
+        p_prev: await lastHash(c.root_id),
         p_hash: hashJson({ confirm: c.ref, reply: "allow", sig: b.sig }), p_decision: "allow", p_reason: null, p_amount: c.amount, p_counterparty: c.counterparty,
         p_record: { kind: "confirm_reply", confirm: c.ref, ledger_ref: c.ledger_ref, reply: "allow", principal_sig: b.sig, at: Date.now() }, p_at: new Date().toISOString(), p_bump_spend: true,
       });

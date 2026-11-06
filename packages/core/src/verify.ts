@@ -34,6 +34,11 @@ export interface VerifyContext {
   minLevel?: (action: Action) => AssuranceLevel;
   /** Count of this tree's actions already seen in the current rate window, when the counterparty tracks one. */
   recentActionCount?: number;
+  /**
+   * Hash of an action the principal has already confirmed (the issuer's confirm state is "allow" for it).
+   * When it equals action.hash, the amount is treated as already counted in status.spent and check 7 returns allow.
+   */
+  confirmedHash?: string;
 }
 
 export interface VerifyInput {
@@ -159,20 +164,27 @@ export function verifyAction(input: VerifyInput, ctx: VerifyContext): Verdict {
 
   // ---- 6. Limits ---------------------------------------------------------
   const L = eff.limits;
+  const confirmed = ctx.confirmedHash !== undefined && ctx.confirmedHash === action.hash;
+  // A confirmed action's amount was added to the tree's spend when the principal replied; don't count it twice.
+  const spentBefore = confirmed && action.amount !== undefined ? Math.max(0, st.spent - action.amount) : st.spent;
   if (action.amount !== undefined) {
     if (!Number.isInteger(action.amount) || action.amount < 0) return fail(6, "Limits", "amount must be a non-negative integer in minor units", "malformed");
     if (L.total === undefined || L.per_txn === undefined) return fail(6, "Limits", "mandate grants no spending authority", "over_limit");
     if (action.ccy !== L.ccy) return fail(6, "Limits", `currency ${action.ccy} is not mandate currency ${L.ccy}`, "over_limit");
     if (action.amount > L.per_txn) return fail(6, "Limits", `${action.amount} > per_txn ${L.per_txn}`, "over_limit");
-    if (st.spent + action.amount > L.total) return fail(6, "Limits", `spent ${st.spent} + ${action.amount} > total ${L.total}`, "over_limit");
+    if (spentBefore + action.amount > L.total) return fail(6, "Limits", `spent ${spentBefore} + ${action.amount} > total ${L.total}`, "over_limit");
   }
   if (L.rate && ctx.recentActionCount !== undefined) {
     const r = parseRate(L.rate);
     if (r && ctx.recentActionCount >= r.count) return fail(6, "Limits", `rate ${L.rate} exhausted`, "over_limit");
   }
-  pass(6, "Limits", action.amount === undefined ? "no amount" : `${action.amount} ≤ per_txn ${L.per_txn} · ${st.spent + action.amount} ≤ total ${L.total}`);
+  pass(6, "Limits", action.amount === undefined ? "no amount" : `${action.amount} ≤ per_txn ${L.per_txn} · ${spentBefore + action.amount} ≤ total ${L.total}`);
 
   // ---- 7. Confirm threshold ---------------------------------------------
+  if (confirmed) {
+    pass(7, "Confirm threshold", "already confirmed by the principal for this exact action");
+    return { decision: "allow", reason: null, checks, effective: eff, ...base };
+  }
   const overThreshold = action.amount !== undefined && L.confirm_over !== undefined && action.amount > L.confirm_over;
   const alwaysConfirm = (L.confirm_on ?? []).some((p) => actionMatches(p, action.type));
   if (overThreshold || alwaysConfirm) {

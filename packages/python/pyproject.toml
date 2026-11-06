@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "warrant-fastapi"
+version = "0.1.0"
+description = "Warrant for FastAPI: require a verified agent mandate on any route, via a hosted Warrant verifier."
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.10"
+dependencies = ["fastapi>=0.100", "httpx>=0.25"]
+
+[project.optional-dependencies]
+test = ["pytest>=7", "pytest-asyncio>=0.21", "uvicorn"]
+
+[tool.setuptools.packages.find]
+include = ["warrant_fastapi*"]
