@@ -295,6 +295,16 @@
     }
   },
   "remote": {
+    "https://raw.githubusercontent.com/acaddicto/getwarrant/77136664797133935b601af75da43408fc2a6f8c/packages/core/src/attenuate.ts": "64f61a25b06ec5dd72a9ce495b7ca4b13bd721b29cf6baeeb8064327b1eaf418",
+    "https://raw.githubusercontent.com/acaddicto/getwarrant/77136664797133935b601af75da43408fc2a6f8c/packages/core/src/canon.ts": "ec5487a07f3c8127483c1e034342f6063c3eebb8addc60f348c607d034918021",
+    "https://raw.githubusercontent.com/acaddicto/getwarrant/77136664797133935b601af75da43408fc2a6f8c/packages/core/src/crypto.ts": "91e2c296dc16e08f65e27cde7ca58bc4fcf72b8c214be384c4ed674086e24f6a",
+    "https://raw.githubusercontent.com/acaddicto/getwarrant/77136664797133935b601af75da43408fc2a6f8c/packages/core/src/delegate.ts": "fbbc07793f911d0347748bd1330cb0bea6998094f1f04b33909ea2551283eb3a",
+    "https://raw.githubusercontent.com/acaddicto/getwarrant/77136664797133935b601af75da43408fc2a6f8c/packages/core/src/index.ts": "8e912a1fbf2e89b42bdd270962ed09a512d7657238b6d3360aa6b26014aaea8b",
+    "https://raw.githubusercontent.com/acaddicto/getwarrant/77136664797133935b601af75da43408fc2a6f8c/packages/core/src/ledger.ts": "063107580008258bec53a3df81e8182802e1a2090a3265660384c95d497433d4",
+    "https://raw.githubusercontent.com/acaddicto/getwarrant/77136664797133935b601af75da43408fc2a6f8c/packages/core/src/mandate.ts": "e69380476981774204383109163383e04ba3e29ab4c7ccf389b1ea725e3a965d",
+    "https://raw.githubusercontent.com/acaddicto/getwarrant/77136664797133935b601af75da43408fc2a6f8c/packages/core/src/status.ts": "d5d917db5ca83692f7ceded0e27d98d1f2b7416f16feac2976d3926a544ff20f",
+    "https://raw.githubusercontent.com/acaddicto/getwarrant/77136664797133935b601af75da43408fc2a6f8c/packages/core/src/types.ts": "c2501d181f573f308ea36a68348b19f2120503fd458241302c0b855fd71706d3",
+    "https://raw.githubusercontent.com/acaddicto/getwarrant/77136664797133935b601af75da43408fc2a6f8c/packages/core/src/verify.ts": "708b90913bbe72ea2e705077d77f9e1b463550f5b17d6a1fc9c59c8f1c36dbb8",
     "https://raw.githubusercontent.com/acaddicto/getwarrant/83d95128f854f21f6cd9ce46131e25271e84bd6b/packages/core/src/attenuate.ts": "64f61a25b06ec5dd72a9ce495b7ca4b13bd721b29cf6baeeb8064327b1eaf418",
     "https://raw.githubusercontent.com/acaddicto/getwarrant/83d95128f854f21f6cd9ce46131e25271e84bd6b/packages/core/src/canon.ts": "ec5487a07f3c8127483c1e034342f6063c3eebb8addc60f348c607d034918021",
     "https://raw.githubusercontent.com/acaddicto/getwarrant/83d95128f854f21f6cd9ce46131e25271e84bd6b/packages/core/src/crypto.ts": "91e2c296dc16e08f65e27cde7ca58bc4fcf72b8c214be384c4ed674086e24f6a",
