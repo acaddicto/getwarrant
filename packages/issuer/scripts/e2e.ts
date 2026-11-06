@@ -58,11 +58,11 @@ log(`request ${reqRes.request_id} → consent ${reqRes.consent_url}`);
 const shown = await api("GET", `/requests/${reqRes.request_id}`);
 assert(shown.agent.operator === "Tripwise Inc.", "consent screen sees the operator");
 
-// Principal: root assertion is the login; lowers per_txn to $500 and approves.
+// Principal: root assertion is the login; lowers per_txn to $550 and approves.
 const assertion = issueRootAssertion({ root: "demo-wallet", sub: "pw_e2e_" + Date.now().toString(36), aud: disco.issuer, level: "high", iat: now(), exp: now() + 86400 }, root);
 const AUTH = `Warrant-Principal ${assertion}`;
-const prep = await api("POST", `/requests/${reqRes.request_id}/prepare`, { key: principal.kid, limits: { per_txn: 50000 } }, AUTH);
-assert(prep.unsigned.limits.per_txn === 50000 && prep.unsigned.limits.total === 150000, "principal narrowed per_txn only");
+const prep = await api("POST", `/requests/${reqRes.request_id}/prepare`, { key: principal.kid, limits: { per_txn: 55000 } }, AUTH);
+assert(prep.unsigned.limits.per_txn === 55000 && prep.unsigned.limits.total === 150000, "principal narrowed per_txn only");
 const approved = await api("POST", `/requests/${reqRes.request_id}/approve`, { sig: signJson(JSON.parse(prep.payload_to_sign), principal.secretKey) }, AUTH);
 const mandate: Mandate = decodeMandate(approved.token);
 log(`mandate ${mandate.id} issued · sig by ${mandate.sig.map((s) => s.by).join(", ")}`);
@@ -71,7 +71,7 @@ const polled = await api("GET", `/requests/${reqRes.request_id}/token`);
 assert(polled.token === approved.token, "agent can collect the token by polling");
 
 // Tripwise delegates flight booking to FareScout and registers the sub-mandate.
-const sub = delegate(mandate, { agentKey: tripwise, child: { agent: { did: "did:web:farescout.ai" }, scope: { may: ["travel:book_flight"], may_not: mandate.scope.may_not, counterparties: ["iata:*"] }, limits: { ccy: "USD", total: 50000, per_txn: 50000, confirm_over: 50000, confirm_on: mandate.limits.confirm_on } } });
+const sub = delegate(mandate, { agentKey: tripwise, child: { agent: { did: "did:web:farescout.ai" }, scope: { may: ["travel:book_flight"], may_not: mandate.scope.may_not, counterparties: ["iata:*"] }, limits: { ccy: "USD", total: 55000, per_txn: 55000, confirm_over: 50000, confirm_on: mandate.limits.confirm_on } } });
 const { encodeMandate } = await import("../../core/src/index.ts");
 const subRes = await api("POST", "/mandates", { token: encodeMandate(sub) });
 log(`sub-mandate ${sub.id} registered at hop ${subRes.hop}`);

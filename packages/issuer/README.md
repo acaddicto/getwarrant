@@ -17,7 +17,7 @@ scripts/e2e.ts                           full Tripwise walk against a deployed i
 ## Setup (once per project)
 
 1. Apply `0001_init.sql`.
-2. Expose the schema to PostgREST: `alter role authenticator set pgrst.db_schemas = 'public, graphql_public, warrant'; notify pgrst, 'reload config';`
+2. Expose the schema to PostgREST: `alter role authenticator set pgrst.db_schemas = 'public, graphql_public, warrant'; notify pgrst, 'reload config'; notify pgrst, 'reload schema';` (the second notify matters; without it queries return empty until the cache refreshes).
 3. Set the function secret `WARRANT_ISSUER_SECRET` to 32 random bytes, base64url (`node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`). The issuer key pair is derived from it; rotating it changes the issuer `kid`. Optional: `WARRANT_ISSUER_DID`, `WARRANT_PUBLIC_BASE`, `WARRANT_CONSENT_BASE`; they default to the project's own host.
 4. Seed at least one identity root. For development there is a `demo-wallet` root whose private key the e2e script derives from a fixed seed; remove it before anything real touches the instance:
 
