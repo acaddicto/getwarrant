@@ -1,5 +1,6 @@
 {
   "imports": {
+    "@getwarrant/core": "https://raw.githubusercontent.com/acaddicto/getwarrant/83d95128f854f21f6cd9ce46131e25271e84bd6b/packages/core/src/index.ts",
     "@noble/ed25519": "npm:@noble/ed25519@3.2.0",
     "@noble/hashes/sha2.js": "npm:@noble/hashes@2.4.0/sha2.js",
     "@supabase/supabase-js": "npm:@supabase/supabase-js@2.49.4"
