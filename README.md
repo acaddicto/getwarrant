@@ -15,9 +15,23 @@ principal ──signs──▶ mandate ──▶ agent ──sub-mandate──�
 | Package | What |
 | --- | --- |
 | [`packages/core`](packages/core) | `@getwarrant/core` — issue, delegate, verify, ledger. Pure TypeScript, Ed25519, no network. |
+| [`packages/issuer`](packages/issuer) | The hosted issuer: consent flow, co-signing, status, revocation, ledger, confirms, hosted verifier. Supabase Edge Function + Postgres. Live at `https://vvnvwrefyrrapjhmpajr.supabase.co/functions/v1/warrant`. |
+| [`packages/node`](packages/node) | `@getwarrant/node` — Verifier client, Express middleware, MCP tool guard, AgentClient. |
+| [`packages/python`](packages/python) | `warrant-fastapi` — FastAPI dependency over the hosted verifier. |
+| [`demo`](demo) | Tripwise books a trip: Express airline, FastAPI hotel, two agents, a scripted principal, the live issuer. |
 | `vectors/` | Conformance vectors: mandates, chains, actions, statuses and the verdict a verifier MUST return. |
 
 Spec: *Warrant Protocol Specification v0.1* (to be published as `SPEC.md`).
+
+## Wire format for counterparties
+
+```
+Warrant-Mandate:           <hop-1 token>[,<sub-mandate token>...]
+Warrant-Action-Signature:  <kid>:<base64url Ed25519 signature over SHA-256(JCS(request body))>
+Warrant-Confirm:           <confirm ref>     only when repeating an action the principal has confirmed
+```
+
+Responses: `200` and the route runs on `allow`; `202 { confirm_ref, poll }` on `confirm`; `403 { error: <reason>, checks }` on `deny`. The reasons are the spec's: `bad_signature`, `bad_chain`, `principal_unverified`, `revoked`, `expired`, `stale`, `widened`, `out_of_scope`, `over_limit`.
 
 ## Quick look
 
