@@ -1,5 +1,5 @@
-import { signJson, verifyJson, type KeyPair } from "./crypto.js";
-import { DEFAULT_STATUS_TTL_S, MAX_STATUS_TTL_S, type MandateStatus, type SignedStatus } from "./types.js";
+import { signJson, verifyJson, type KeyPair } from "./crypto.ts";
+import { DEFAULT_STATUS_TTL_S, MAX_STATUS_TTL_S, type MandateStatus, type SignedStatus } from "./types.ts";
 
 /** Issuer side: sign a status response. Caps ttl at the spec maximum. */
 export function issueStatus(status: Omit<MandateStatus, "ttl"> & { ttl?: number }, issuerKey: KeyPair): SignedStatus {

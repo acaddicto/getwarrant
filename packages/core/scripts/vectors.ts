@@ -3,9 +3,9 @@
  * a conforming verifier MUST return for each. Other implementations run these to prove conformance.
  */
 import { mkdirSync, writeFileSync } from "node:fs";
-import { encodeMandate } from "../src/mandate.js";
-import { verifyAction } from "../src/verify.js";
-import { b64url } from "../src/canon.js";
+import { encodeMandate } from "../src/mandate.ts";
+import { verifyAction } from "../src/verify.ts";
+import { b64url } from "../src/canon.ts";
 import { action, buildFarescout, buildTripwise, ISSUER_ID, keys, NOW, resolver, status, trustedRoots } from "../test/fixture.js";
 
 const tripwise = buildTripwise();

@@ -1,9 +1,9 @@
-import { actionMatches, checkAttenuation, effective, patternCovers } from "./attenuate.js";
-import { utf8 } from "./canon.js";
-import { sign, verify as verifySig, type KeyPair } from "./crypto.js";
-import { firstBadSignature, parseRootAssertion, signingPayload, validateShape } from "./mandate.js";
-import { verifyStatusSignature } from "./status.js";
-import { verifyJson } from "./crypto.js";
+import { actionMatches, checkAttenuation, effective, patternCovers } from "./attenuate.ts";
+import { utf8 } from "./canon.ts";
+import { sign, verify as verifySig, type KeyPair } from "./crypto.ts";
+import { firstBadSignature, parseRootAssertion, signingPayload, validateShape } from "./mandate.ts";
+import { verifyStatusSignature } from "./status.ts";
+import { verifyJson } from "./crypto.ts";
 import {
   CLOCK_SKEW_S,
   MAX_STATUS_TTL_S,
@@ -15,7 +15,7 @@ import {
   type Mandate,
   type SignedStatus,
   type Verdict,
-} from "./types.js";
+} from "./types.ts";
 
 export interface TrustedRoot {
   publicKey: Uint8Array;

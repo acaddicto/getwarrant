@@ -1,4 +1,4 @@
-import type { Limits, Mandate, Scope } from "./types.js";
+import type { Limits, Mandate, Scope } from "./types.ts";
 
 /** Does a parent counterparty pattern cover a child pattern? `*` covers all; `prefix:*` covers `prefix:x` and `prefix:*`; else exact. */
 export function patternCovers(parent: string, child: string): boolean {

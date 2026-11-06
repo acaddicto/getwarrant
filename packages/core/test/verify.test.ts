@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { verifyAction } from "../src/verify.js";
-import { decodeMandate, encodeMandate, issueMandate, validateShape } from "../src/mandate.js";
-import { delegate } from "../src/delegate.js";
-import { checkAttenuation, effective } from "../src/attenuate.js";
-import { canonicalize } from "../src/canon.js";
-import { buildRecord, recordHash, resolveConfirm, signRecordAsIssuer, signRecordAsVerifier, verifyLedger } from "../src/ledger.js";
-import { issueStatus } from "../src/status.js";
-import { action, buildFarescout, buildTripwise, draft, ISSUER_ID, keys, NOW, resolver, status, T0, T0_MS, trustedRoots } from "./fixture.js";
-import type { Mandate } from "../src/types.js";
+import { verifyAction } from "../src/verify.ts";
+import { decodeMandate, encodeMandate, issueMandate, validateShape } from "../src/mandate.ts";
+import { delegate } from "../src/delegate.ts";
+import { checkAttenuation, effective } from "../src/attenuate.ts";
+import { canonicalize } from "../src/canon.ts";
+import { buildRecord, recordHash, resolveConfirm, signRecordAsIssuer, signRecordAsVerifier, verifyLedger } from "../src/ledger.ts";
+import { issueStatus } from "../src/status.ts";
+import { action, buildFarescout, buildTripwise, draft, ISSUER_ID, keys, NOW, resolver, status, T0, T0_MS, trustedRoots } from "./fixture.ts";
+import type { Mandate } from "../src/types.ts";
 
 const tripwise = buildTripwise();
 const farescout = buildFarescout(tripwise);
@@ -67,7 +67,7 @@ describe("delegation and attenuation", () => {
     // farescout has max_depth 1: one more level is allowed, and that level gets max_depth 0.
     const deeper = delegate(farescout, { agentKey: keys.farescout, child: { agent: { did: "did:web:deeper.ai" }, scope: farescout.scope, limits: farescout.limits } });
     expect(deeper.delegation.max_depth).toBe(0);
-    const { keyPairFromSecret } = await import("../src/crypto.js");
+    const { keyPairFromSecret } = await import("../src/crypto.ts");
     const deeperKey = keyPairFromSecret("did:web:deeper.ai#k1", new Uint8Array(32).fill(9));
     expect(() => delegate(deeper, { agentKey: deeperKey, child: { agent: { did: "did:web:deepest.ai" }, scope: deeper.scope, limits: deeper.limits } })).toThrow(/max_depth 0/);
   });
@@ -125,7 +125,7 @@ describe("verifier: the seven checks fail in order", () => {
     expect(run({}, { ...ctx, trustedRoots: {} }).reason).toBe("principal_unverified");
   });
   it("2 principal_unverified: assurance too low for spend", async () => {
-    const { issueRootAssertion } = await import("../src/mandate.js");
+    const { issueRootAssertion } = await import("../src/mandate.ts");
     const low = issueRootAssertion({ root: "eudi-wallet", sub: "pw_7f31c2a9", aud: ISSUER_ID, level: "low", iat: T0, exp: T0 + 86400 }, keys.root);
     const m = issueMandate({ ...draft, principal: { ...draft.principal, assertion: low } }, { issuerBase: "https://warrant.example", principalKey: keys.principal, issuerKey: keys.issuer, id: tripwise.id });
     const spend = verifyAction({ chain: [m], action: action({ by: keys.tripwise }), status: status() }, ctx);
@@ -155,8 +155,8 @@ describe("verifier: the seven checks fail in order", () => {
     wide.sig = wide.sig.slice(0, 2);
     const signed = { ...wide, sig: [...wide.sig, { ...farescout.sig[2], value: "" }] };
     // Re-sign with Tripwise's key so check 1 passes.
-    const { signJson } = await import("../src/crypto.js");
-    const { signingPayload } = await import("../src/mandate.js");
+    const { signJson } = await import("../src/crypto.ts");
+    const { signingPayload } = await import("../src/mandate.ts");
     signed.sig[2] = { ...signed.sig[2], value: signJson(signingPayload(signed as Mandate, 2), keys.tripwise.secretKey) };
     const v = run({ chain: [tripwise, signed as Mandate] });
     expect(v.reason).toBe("widened");

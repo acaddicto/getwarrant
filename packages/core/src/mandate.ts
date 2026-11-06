@@ -1,5 +1,5 @@
-import { b64url, canonicalize, unb64url, utf8 } from "./canon.js";
-import { signJson, ulid, verifyJson, type KeyPair } from "./crypto.js";
+import { b64url, canonicalize, unb64url, utf8 } from "./canon.ts";
+import { signJson, ulid, verifyJson, type KeyPair } from "./crypto.ts";
 import {
   MANDATE_TYP,
   MAX_DEPTH,
@@ -10,7 +10,7 @@ import {
   type MandateDraft,
   type RootAssertion,
   type Signature,
-} from "./types.js";
+} from "./types.ts";
 
 export interface IssueOptions {
   /** Base URL of the issuer, e.g. https://api.getwarrant.dev */

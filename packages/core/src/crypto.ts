@@ -1,6 +1,6 @@
 import * as ed from "@noble/ed25519";
 import { sha256, sha512 } from "@noble/hashes/sha2.js";
-import { b64url, canonicalize, unb64url, utf8 } from "./canon.js";
+import { b64url, canonicalize, hex, unb64url, utf8 } from "./canon.ts";
 
 // noble/ed25519 v3 needs sha512 wired in for the synchronous API.
 ed.hashes.sha512 = sha512;
@@ -43,7 +43,7 @@ export function verifyJson(signature: string, value: unknown, publicKey: Uint8Ar
 
 export function sha256Hex(data: Uint8Array | string): string {
   const bytes = typeof data === "string" ? utf8(data) : data;
-  return Buffer.from(sha256(bytes)).toString("hex");
+  return hex(sha256(bytes));
 }
 
 /** SHA-256 over the JCS form of a JSON value; used for action hashes and ledger chaining. */

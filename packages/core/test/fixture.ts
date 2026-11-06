@@ -2,12 +2,12 @@
  * The Tripwise scenario from the spec, built deterministically so the same fixture
  * backs the tests and the published test vectors.
  */
-import { keyPairFromSecret, type KeyPair } from "../src/crypto.js";
-import { issueMandate, issueRootAssertion } from "../src/mandate.js";
-import { delegate } from "../src/delegate.js";
-import { issueStatus } from "../src/status.js";
-import { signAction } from "../src/verify.js";
-import type { Action, KeyResolver, Mandate, MandateDraft, SignedStatus } from "../src/types.js";
+import { keyPairFromSecret, type KeyPair } from "../src/crypto.ts";
+import { issueMandate, issueRootAssertion } from "../src/mandate.ts";
+import { delegate } from "../src/delegate.ts";
+import { issueStatus } from "../src/status.ts";
+import { signAction } from "../src/verify.ts";
+import type { Action, KeyResolver, Mandate, MandateDraft, SignedStatus } from "../src/types.ts";
 
 // Deterministic 32-byte seeds (test only — never reuse).
 const seed = (n: number) => new Uint8Array(32).map((_, i) => (i * 7 + n * 13) % 256);

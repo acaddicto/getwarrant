@@ -1,5 +1,5 @@
-import { hashJson, signJson, ulid, verifyJson, type KeyPair } from "./crypto.js";
-import type { Action, KeyResolver, LedgerRecord, Mandate, SignedStatus, Verdict } from "./types.js";
+import { hashJson, signJson, ulid, verifyJson, type KeyPair } from "./crypto.ts";
+import type { Action, KeyResolver, LedgerRecord, Mandate, SignedStatus, Verdict } from "./types.ts";
 
 export interface BuildRecordInput {
   verdict: Verdict;

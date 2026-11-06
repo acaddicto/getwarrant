@@ -1,5 +1,5 @@
-export * from "./types.js";
-export { canonicalize, b64url, unb64url } from "./canon.js";
+export * from "./types.ts";
+export { canonicalize, b64url, unb64url } from "./canon.ts";
 export {
   generateKeyPair,
   keyPairFromSecret,
@@ -11,7 +11,7 @@ export {
   hashJson,
   ulid,
   type KeyPair,
-} from "./crypto.js";
+} from "./crypto.ts";
 export {
   issueMandate,
   encodeMandate,
@@ -25,11 +25,11 @@ export {
   verifyRootAssertion,
   MandateError,
   type IssueOptions,
-} from "./mandate.js";
-export { delegate, type DelegateOptions } from "./delegate.js";
-export { checkAttenuation, effective, patternCovers, actionMatches, type Effective } from "./attenuate.js";
-export { issueStatus, verifyStatusSignature } from "./status.js";
-export { verifyAction, signAction, parseRate, type VerifyContext, type VerifyInput, type TrustedRoot } from "./verify.js";
+} from "./mandate.ts";
+export { delegate, type DelegateOptions } from "./delegate.ts";
+export { checkAttenuation, effective, patternCovers, actionMatches, type Effective } from "./attenuate.ts";
+export { issueStatus, verifyStatusSignature } from "./status.ts";
+export { verifyAction, signAction, parseRate, type VerifyContext, type VerifyInput, type TrustedRoot } from "./verify.ts";
 export {
   buildRecord,
   recordBody,
@@ -39,4 +39,4 @@ export {
   resolveConfirm,
   verifyLedger,
   type BuildRecordInput,
-} from "./ledger.js";
+} from "./ledger.ts";

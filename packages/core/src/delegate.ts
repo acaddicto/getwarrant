@@ -1,7 +1,7 @@
-import { signJson, type KeyPair } from "./crypto.js";
-import { checkAttenuation } from "./attenuate.js";
-import { MandateError, mandateId, signingPayload, validateShape } from "./mandate.js";
-import type { AgentRef, Limits, Mandate, Scope, Signature } from "./types.js";
+import { signJson, type KeyPair } from "./crypto.ts";
+import { checkAttenuation } from "./attenuate.ts";
+import { MandateError, mandateId, signingPayload, validateShape } from "./mandate.ts";
+import type { AgentRef, Limits, Mandate, Scope, Signature } from "./types.ts";
 
 export interface DelegateOptions {
   /** The delegating agent's key. Its kid MUST be a fragment of the parent's agent DID, e.g. did:web:x#k1. */

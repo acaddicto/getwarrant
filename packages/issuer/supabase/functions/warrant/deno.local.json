@@ -1,0 +1,8 @@
+{
+  "imports": {
+    "@getwarrant/core": "../../../../core/src/index.ts",
+    "@noble/ed25519": "npm:@noble/ed25519@3.2.0",
+    "@noble/hashes/sha2.js": "npm:@noble/hashes@2.4.0/sha2.js",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2.49.4"
+  }
+}
