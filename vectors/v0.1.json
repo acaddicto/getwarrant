@@ -1,0 +1,507 @@
+{
+  "spec": "warrant/0.1",
+  "generated_by": "@getwarrant/core",
+  "context": {
+    "now": 1793613130,
+    "issuer_id": "did:web:warrant.example",
+    "trusted_roots": {
+      "eudi-wallet": {
+        "public_key": "QOEcT8rVr-KAHJVBQRxnzxtisZbqQ43_ujrjVqYRSug"
+      }
+    },
+    "keys": {
+      "passkey:c2a7": "nHq6JH1Lmot5tW6rGCV05fjNlUAomh-JWgaeAFtYs8o",
+      "did:web:warrant.example#k1": "CJsr2yTZmRxIIpx87nUBdve6Sx5M1Jdl1XnI_G4iUpM",
+      "eudi-wallet:signer-1": "QOEcT8rVr-KAHJVBQRxnzxtisZbqQ43_ujrjVqYRSug",
+      "did:web:agents.tripwise.com#k1": "vyfjDK6UHpxoak_gdhnHnlhKdDDOyklRVz6WwndEemU",
+      "did:web:farescout.ai#k1": "Fs50Sc84KEoX6FE2wUFCpHXxaquCMAikIFRAumDA3AA",
+      "did:web:rogue.example#k1": "5OZWQc-SG0pZNPZDWiY01fkr4cbmI4R4DSXtWMunJxY",
+      "did:web:singaporeair.com#verifier": "0yiYepDgUr7tBkzgZ7U9ztemyfLwM2TZdJIXXC6v9Ec"
+    }
+  },
+  "mandates": {
+    "tripwise": {
+      "typ": "warrant/mandate",
+      "ver": "0.1",
+      "id": "wrt_01JBQ8Z7K4TRPWSE0000000000",
+      "principal": {
+        "root": "eudi-wallet",
+        "sub": "pw_7f31c2a9",
+        "key": "passkey:c2a7",
+        "assertion": "eyJhdWQiOiJkaWQ6d2ViOndhcnJhbnQuZXhhbXBsZSIsImV4cCI6MTgyNTE0OTAwMCwiaWF0IjoxNzg5Mzc5NDAwLCJsZXZlbCI6ImhpZ2giLCJyb290IjoiZXVkaS13YWxsZXQiLCJzdWIiOiJwd183ZjMxYzJhOSJ9.lqICkYYFER99By0rO9KufaadjMTpGYQ7srKgZsbv7QWyT-1yQXMxFBbrGScDRs-iBCYGOlF38I4Rtu4idnRhDw"
+      },
+      "agent": {
+        "did": "did:web:agents.tripwise.com",
+        "runtime": "attest:2026.11.1"
+      },
+      "scope": {
+        "may": [
+          "travel:search",
+          "travel:book_flight",
+          "travel:book_hotel",
+          "travel:cancel_own_booking"
+        ],
+        "may_not": [
+          "payments:change_method",
+          "travel:book_for_others",
+          "identity:share_documents"
+        ],
+        "counterparties": [
+          "iata:*",
+          "api:booking.com",
+          "api:expedia.com"
+        ]
+      },
+      "limits": {
+        "ccy": "USD",
+        "total": 150000,
+        "per_txn": 60000,
+        "confirm_over": 50000,
+        "confirm_on": [
+          "travel:cancel_own_booking"
+        ]
+      },
+      "delegation": {
+        "max_depth": 2,
+        "attenuate": true
+      },
+      "nbf": 1793613000,
+      "exp": 1794217800,
+      "revocation": "https://warrant.example/r/wrt_01JBQ8Z7K4TRPWSE0000000000",
+      "ledger": "https://warrant.example/l/wrt_01JBQ8Z7K4TRPWSE0000000000",
+      "sig": [
+        {
+          "by": "principal",
+          "alg": "EdDSA",
+          "kid": "passkey:c2a7",
+          "value": "a-Gs55BivkVo9SZoJPTVEopIat6MY1h6m-OoebJ72SSmp036j6Hm0BLZxywReMrj8wHkDrz38MxTfZXvhbRHDg"
+        },
+        {
+          "by": "issuer",
+          "alg": "EdDSA",
+          "kid": "did:web:warrant.example#k1",
+          "value": "ZRgbPDy8t8GnqGJ6WaP5s-dFg2noovywIKq6gOnUhtmyf1KDV7KVTaZ0FHjfbKP73YKBQ_fVzbilhycQ76WMDg"
+        }
+      ]
+    },
+    "farescout": {
+      "typ": "warrant/mandate",
+      "ver": "0.1",
+      "id": "wrt_01JBQ9F3M2FARESCT000000000",
+      "parent": "wrt_01JBQ8Z7K4TRPWSE0000000000",
+      "principal": {
+        "root": "eudi-wallet",
+        "sub": "pw_7f31c2a9",
+        "key": "passkey:c2a7",
+        "assertion": "eyJhdWQiOiJkaWQ6d2ViOndhcnJhbnQuZXhhbXBsZSIsImV4cCI6MTgyNTE0OTAwMCwiaWF0IjoxNzg5Mzc5NDAwLCJsZXZlbCI6ImhpZ2giLCJyb290IjoiZXVkaS13YWxsZXQiLCJzdWIiOiJwd183ZjMxYzJhOSJ9.lqICkYYFER99By0rO9KufaadjMTpGYQ7srKgZsbv7QWyT-1yQXMxFBbrGScDRs-iBCYGOlF38I4Rtu4idnRhDw"
+      },
+      "agent": {
+        "did": "did:web:farescout.ai"
+      },
+      "scope": {
+        "may": [
+          "travel:book_flight"
+        ],
+        "may_not": [
+          "payments:change_method",
+          "travel:book_for_others",
+          "identity:share_documents"
+        ],
+        "counterparties": [
+          "iata:*"
+        ]
+      },
+      "limits": {
+        "ccy": "USD",
+        "total": 60000,
+        "per_txn": 60000,
+        "confirm_over": 50000,
+        "confirm_on": [
+          "travel:cancel_own_booking"
+        ]
+      },
+      "delegation": {
+        "max_depth": 1,
+        "attenuate": true
+      },
+      "nbf": 1793613060,
+      "exp": 1794217800,
+      "revocation": "https://warrant.example/r/wrt_01JBQ8Z7K4TRPWSE0000000000",
+      "ledger": "https://warrant.example/l/wrt_01JBQ8Z7K4TRPWSE0000000000",
+      "sig": [
+        {
+          "by": "principal",
+          "alg": "EdDSA",
+          "kid": "passkey:c2a7",
+          "value": "a-Gs55BivkVo9SZoJPTVEopIat6MY1h6m-OoebJ72SSmp036j6Hm0BLZxywReMrj8wHkDrz38MxTfZXvhbRHDg"
+        },
+        {
+          "by": "issuer",
+          "alg": "EdDSA",
+          "kid": "did:web:warrant.example#k1",
+          "value": "ZRgbPDy8t8GnqGJ6WaP5s-dFg2noovywIKq6gOnUhtmyf1KDV7KVTaZ0FHjfbKP73YKBQ_fVzbilhycQ76WMDg"
+        },
+        {
+          "by": "agent",
+          "alg": "EdDSA",
+          "kid": "did:web:agents.tripwise.com#k1",
+          "did": "did:web:agents.tripwise.com",
+          "iat": 1793613060,
+          "value": "bwouQXGsqqJVWYzZdBzmWj43b8rlEDJhriENPIZMqUmlWCSizgL0ndSLMTXLrdMtCfKKTfB1_GRG1yOUpnSuCg"
+        }
+      ]
+    },
+    "tripwise_token": "wrt.eyJhZ2VudCI6eyJkaWQiOiJkaWQ6d2ViOmFnZW50cy50cmlwd2lzZS5jb20iLCJydW50aW1lIjoiYXR0ZXN0OjIwMjYuMTEuMSJ9LCJkZWxlZ2F0aW9uIjp7ImF0dGVudWF0ZSI6dHJ1ZSwibWF4X2RlcHRoIjoyfSwiZXhwIjoxNzk0MjE3ODAwLCJpZCI6IndydF8wMUpCUThaN0s0VFJQV1NFMDAwMDAwMDAwMCIsImxlZGdlciI6Imh0dHBzOi8vd2FycmFudC5leGFtcGxlL2wvd3J0XzAxSkJROFo3SzRUUlBXU0UwMDAwMDAwMDAwIiwibGltaXRzIjp7ImNjeSI6IlVTRCIsImNvbmZpcm1fb24iOlsidHJhdmVsOmNhbmNlbF9vd25fYm9va2luZyJdLCJjb25maXJtX292ZXIiOjUwMDAwLCJwZXJfdHhuIjo2MDAwMCwidG90YWwiOjE1MDAwMH0sIm5iZiI6MTc5MzYxMzAwMCwicHJpbmNpcGFsIjp7ImFzc2VydGlvbiI6ImV5SmhkV1FpT2lKa2FXUTZkMlZpT25kaGNuSmhiblF1WlhoaGJYQnNaU0lzSW1WNGNDSTZNVGd5TlRFME9UQXdNQ3dpYVdGMElqb3hOemc1TXpjNU5EQXdMQ0pzWlhabGJDSTZJbWhwWjJnaUxDSnliMjkwSWpvaVpYVmthUzEzWVd4c1pYUWlMQ0p6ZFdJaU9pSndkMTgzWmpNeFl6SmhPU0o5LmxxSUNrWVlGRVI5OUJ5MHJPOUt1ZmFhZGpNVHBHWVE3c3JLZ1pzYnY3UVd5VC0xeVFYTXhGQmJyR1NjRFJzLWlCQ1lHT2xGMzhJNFJ0dTRpZG5SaER3Iiwia2V5IjoicGFzc2tleTpjMmE3Iiwicm9vdCI6ImV1ZGktd2FsbGV0Iiwic3ViIjoicHdfN2YzMWMyYTkifSwicmV2b2NhdGlvbiI6Imh0dHBzOi8vd2FycmFudC5leGFtcGxlL3Ivd3J0XzAxSkJROFo3SzRUUlBXU0UwMDAwMDAwMDAwIiwic2NvcGUiOnsiY291bnRlcnBhcnRpZXMiOlsiaWF0YToqIiwiYXBpOmJvb2tpbmcuY29tIiwiYXBpOmV4cGVkaWEuY29tIl0sIm1heSI6WyJ0cmF2ZWw6c2VhcmNoIiwidHJhdmVsOmJvb2tfZmxpZ2h0IiwidHJhdmVsOmJvb2tfaG90ZWwiLCJ0cmF2ZWw6Y2FuY2VsX293bl9ib29raW5nIl0sIm1heV9ub3QiOlsicGF5bWVudHM6Y2hhbmdlX21ldGhvZCIsInRyYXZlbDpib29rX2Zvcl9vdGhlcnMiLCJpZGVudGl0eTpzaGFyZV9kb2N1bWVudHMiXX0sInNpZyI6W3siYWxnIjoiRWREU0EiLCJieSI6InByaW5jaXBhbCIsImtpZCI6InBhc3NrZXk6YzJhNyIsInZhbHVlIjoiYS1HczU1Qml2a1ZvOVNab0pQVFZFb3BJYXQ2TVkxaDZtLU9vZWJKNzJTU21wMDM2ajZIbTBCTFp4eXdSZU1yajh3SGtEcnozOE14VGZaWHZoYlJIRGcifSx7ImFsZyI6IkVkRFNBIiwiYnkiOiJpc3N1ZXIiLCJraWQiOiJkaWQ6d2ViOndhcnJhbnQuZXhhbXBsZSNrMSIsInZhbHVlIjoiWlJnYlBEeTh0OEducUdKNldhUDVzLWRGZzJub292eXdJS3E2Z09uVWh0bXlmMUtEVjdLVlRhWjBGSGpmYktQNzNZS0JRX2ZWemJpbGh5Y1E3NldNRGcifV0sInR5cCI6IndhcnJhbnQvbWFuZGF0ZSIsInZlciI6IjAuMSJ9",
+    "farescout_token": "wrt.eyJhZ2VudCI6eyJkaWQiOiJkaWQ6d2ViOmZhcmVzY291dC5haSJ9LCJkZWxlZ2F0aW9uIjp7ImF0dGVudWF0ZSI6dHJ1ZSwibWF4X2RlcHRoIjoxfSwiZXhwIjoxNzk0MjE3ODAwLCJpZCI6IndydF8wMUpCUTlGM00yRkFSRVNDVDAwMDAwMDAwMCIsImxlZGdlciI6Imh0dHBzOi8vd2FycmFudC5leGFtcGxlL2wvd3J0XzAxSkJROFo3SzRUUlBXU0UwMDAwMDAwMDAwIiwibGltaXRzIjp7ImNjeSI6IlVTRCIsImNvbmZpcm1fb24iOlsidHJhdmVsOmNhbmNlbF9vd25fYm9va2luZyJdLCJjb25maXJtX292ZXIiOjUwMDAwLCJwZXJfdHhuIjo2MDAwMCwidG90YWwiOjYwMDAwfSwibmJmIjoxNzkzNjEzMDYwLCJwYXJlbnQiOiJ3cnRfMDFKQlE4WjdLNFRSUFdTRTAwMDAwMDAwMDAiLCJwcmluY2lwYWwiOnsiYXNzZXJ0aW9uIjoiZXlKaGRXUWlPaUprYVdRNmQyVmlPbmRoY25KaGJuUXVaWGhoYlhCc1pTSXNJbVY0Y0NJNk1UZ3lOVEUwT1RBd01Dd2lhV0YwSWpveE56ZzVNemM1TkRBd0xDSnNaWFpsYkNJNkltaHBaMmdpTENKeWIyOTBJam9pWlhWa2FTMTNZV3hzWlhRaUxDSnpkV0lpT2lKd2QxODNaak14WXpKaE9TSjkubHFJQ2tZWUZFUjk5Qnkwck85S3VmYWFkak1UcEdZUTdzcktnWnNidjdRV3lULTF5UVhNeEZCYnJHU2NEUnMtaUJDWUdPbEYzOEk0UnR1NGlkblJoRHciLCJrZXkiOiJwYXNza2V5OmMyYTciLCJyb290IjoiZXVkaS13YWxsZXQiLCJzdWIiOiJwd183ZjMxYzJhOSJ9LCJyZXZvY2F0aW9uIjoiaHR0cHM6Ly93YXJyYW50LmV4YW1wbGUvci93cnRfMDFKQlE4WjdLNFRSUFdTRTAwMDAwMDAwMDAiLCJzY29wZSI6eyJjb3VudGVycGFydGllcyI6WyJpYXRhOioiXSwibWF5IjpbInRyYXZlbDpib29rX2ZsaWdodCJdLCJtYXlfbm90IjpbInBheW1lbnRzOmNoYW5nZV9tZXRob2QiLCJ0cmF2ZWw6Ym9va19mb3Jfb3RoZXJzIiwiaWRlbnRpdHk6c2hhcmVfZG9jdW1lbnRzIl19LCJzaWciOlt7ImFsZyI6IkVkRFNBIiwiYnkiOiJwcmluY2lwYWwiLCJraWQiOiJwYXNza2V5OmMyYTciLCJ2YWx1ZSI6ImEtR3M1NUJpdmtWbzlTWm9KUFRWRW9wSWF0Nk1ZMWg2bS1Pb2ViSjcyU1NtcDAzNmo2SG0wQkxaeHl3UmVNcmo4d0hrRHJ6MzhNeFRmWlh2aGJSSERnIn0seyJhbGciOiJFZERTQSIsImJ5IjoiaXNzdWVyIiwia2lkIjoiZGlkOndlYjp3YXJyYW50LmV4YW1wbGUjazEiLCJ2YWx1ZSI6IlpSZ2JQRHk4dDhHbnFHSjZXYVA1cy1kRmcybm9vdnl3SUtxNmdPblVodG15ZjFLRFY3S1ZUYVowRkhqZmJLUDczWUtCUV9mVnpiaWxoeWNRNzZXTURnIn0seyJhbGciOiJFZERTQSIsImJ5IjoiYWdlbnQiLCJkaWQiOiJkaWQ6d2ViOmFnZW50cy50cmlwd2lzZS5jb20iLCJpYXQiOjE3OTM2MTMwNjAsImtpZCI6ImRpZDp3ZWI6YWdlbnRzLnRyaXB3aXNlLmNvbSNrMSIsInZhbHVlIjoiYndvdVFYR3NxcUpWV1l6WmRCem1XajQzYjhybEVESmhyaUVOUElaTXFVbWxXQ1NpemdMMG5kU0xNVFhMcmRNdENmS0tUZkIxX0dSRzF5T1VwblN1Q2cifV0sInR5cCI6IndhcnJhbnQvbWFuZGF0ZSIsInZlciI6IjAuMSJ9"
+  },
+  "cases": [
+    {
+      "name": "hop2_allow",
+      "chain": [
+        "wrt_01JBQ8Z7K4TRPWSE0000000000",
+        "wrt_01JBQ9F3M2FARESCT000000000"
+      ],
+      "action": {
+        "type": "travel:book_flight",
+        "amount": 47800,
+        "ccy": "USD",
+        "counterparty": "iata:SQ",
+        "hash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce",
+        "kid": "did:web:farescout.ai#k1",
+        "sig": "lwelLLrKffKzzt4o7NDhwsw_-UHcN58H0NIH5Jdw4IfIOpcZDm7pazFBq2j40X6tyJ4uoxqUZnsaGsjSSoWoAg"
+      },
+      "status": {
+        "status": {
+          "id": "wrt_01JBQ8Z7K4TRPWSE0000000000",
+          "status": "active",
+          "spent": 0,
+          "asof": 1793613120,
+          "ttl": 30
+        },
+        "kid": "did:web:warrant.example#k1",
+        "sig": "twAfQBbtkNu_6nXzojJag6mPMT_OHrca4WVwqRasz7YZPybxBIIR2QFE3XrLPY0mOjikjH7UKmZWfCBQvRPtCg"
+      },
+      "expect": {
+        "decision": "allow",
+        "reason": null,
+        "failed_step": null
+      }
+    },
+    {
+      "name": "hop1_allow_hotel",
+      "chain": [
+        "wrt_01JBQ8Z7K4TRPWSE0000000000"
+      ],
+      "action": {
+        "type": "travel:book_hotel",
+        "amount": 47800,
+        "ccy": "USD",
+        "counterparty": "api:booking.com",
+        "hash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce",
+        "kid": "did:web:agents.tripwise.com#k1",
+        "sig": "e7cGi5lnZ-kHHk3C2l7XTAWxRldj3iE6wZYvq8dvphEkHPSpFUajRaLgd1UBoRDfnqSNOdOGy0X5_OmJs4nJDA"
+      },
+      "status": {
+        "status": {
+          "id": "wrt_01JBQ8Z7K4TRPWSE0000000000",
+          "status": "active",
+          "spent": 0,
+          "asof": 1793613120,
+          "ttl": 30
+        },
+        "kid": "did:web:warrant.example#k1",
+        "sig": "twAfQBbtkNu_6nXzojJag6mPMT_OHrca4WVwqRasz7YZPybxBIIR2QFE3XrLPY0mOjikjH7UKmZWfCBQvRPtCg"
+      },
+      "expect": {
+        "decision": "allow",
+        "reason": null,
+        "failed_step": null
+      }
+    },
+    {
+      "name": "hop2_confirm_over_threshold",
+      "chain": [
+        "wrt_01JBQ8Z7K4TRPWSE0000000000",
+        "wrt_01JBQ9F3M2FARESCT000000000"
+      ],
+      "action": {
+        "type": "travel:book_flight",
+        "amount": 54000,
+        "ccy": "USD",
+        "counterparty": "iata:SQ",
+        "hash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce",
+        "kid": "did:web:farescout.ai#k1",
+        "sig": "lwelLLrKffKzzt4o7NDhwsw_-UHcN58H0NIH5Jdw4IfIOpcZDm7pazFBq2j40X6tyJ4uoxqUZnsaGsjSSoWoAg"
+      },
+      "status": {
+        "status": {
+          "id": "wrt_01JBQ8Z7K4TRPWSE0000000000",
+          "status": "active",
+          "spent": 0,
+          "asof": 1793613120,
+          "ttl": 30
+        },
+        "kid": "did:web:warrant.example#k1",
+        "sig": "twAfQBbtkNu_6nXzojJag6mPMT_OHrca4WVwqRasz7YZPybxBIIR2QFE3XrLPY0mOjikjH7UKmZWfCBQvRPtCg"
+      },
+      "expect": {
+        "decision": "confirm",
+        "reason": null,
+        "failed_step": null
+      }
+    },
+    {
+      "name": "hop1_confirm_on_cancel",
+      "chain": [
+        "wrt_01JBQ8Z7K4TRPWSE0000000000"
+      ],
+      "action": {
+        "type": "travel:cancel_own_booking",
+        "amount": 0,
+        "ccy": "USD",
+        "counterparty": "iata:SQ",
+        "hash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce",
+        "kid": "did:web:agents.tripwise.com#k1",
+        "sig": "e7cGi5lnZ-kHHk3C2l7XTAWxRldj3iE6wZYvq8dvphEkHPSpFUajRaLgd1UBoRDfnqSNOdOGy0X5_OmJs4nJDA"
+      },
+      "status": {
+        "status": {
+          "id": "wrt_01JBQ8Z7K4TRPWSE0000000000",
+          "status": "active",
+          "spent": 0,
+          "asof": 1793613120,
+          "ttl": 30
+        },
+        "kid": "did:web:warrant.example#k1",
+        "sig": "twAfQBbtkNu_6nXzojJag6mPMT_OHrca4WVwqRasz7YZPybxBIIR2QFE3XrLPY0mOjikjH7UKmZWfCBQvRPtCg"
+      },
+      "expect": {
+        "decision": "confirm",
+        "reason": null,
+        "failed_step": null
+      }
+    },
+    {
+      "name": "deny_bad_signature_rogue_agent",
+      "chain": [
+        "wrt_01JBQ8Z7K4TRPWSE0000000000",
+        "wrt_01JBQ9F3M2FARESCT000000000"
+      ],
+      "action": {
+        "type": "travel:book_flight",
+        "amount": 47800,
+        "ccy": "USD",
+        "counterparty": "iata:SQ",
+        "hash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce",
+        "kid": "did:web:rogue.example#k1",
+        "sig": "B7FihENAKvSXZdFg28IhiPMNRktIvOCKxZmicDKVVZKyD4cur1V8V0E--nuC5bXHfSKrqstFVI5LGvLSj80pCQ"
+      },
+      "status": {
+        "status": {
+          "id": "wrt_01JBQ8Z7K4TRPWSE0000000000",
+          "status": "active",
+          "spent": 0,
+          "asof": 1793613120,
+          "ttl": 30
+        },
+        "kid": "did:web:warrant.example#k1",
+        "sig": "twAfQBbtkNu_6nXzojJag6mPMT_OHrca4WVwqRasz7YZPybxBIIR2QFE3XrLPY0mOjikjH7UKmZWfCBQvRPtCg"
+      },
+      "expect": {
+        "decision": "deny",
+        "reason": "bad_signature",
+        "failed_step": 1
+      }
+    },
+    {
+      "name": "deny_revoked",
+      "chain": [
+        "wrt_01JBQ8Z7K4TRPWSE0000000000",
+        "wrt_01JBQ9F3M2FARESCT000000000"
+      ],
+      "action": {
+        "type": "travel:book_flight",
+        "amount": 47800,
+        "ccy": "USD",
+        "counterparty": "iata:SQ",
+        "hash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce",
+        "kid": "did:web:farescout.ai#k1",
+        "sig": "lwelLLrKffKzzt4o7NDhwsw_-UHcN58H0NIH5Jdw4IfIOpcZDm7pazFBq2j40X6tyJ4uoxqUZnsaGsjSSoWoAg"
+      },
+      "status": {
+        "status": {
+          "id": "wrt_01JBQ8Z7K4TRPWSE0000000000",
+          "status": "revoked",
+          "spent": 0,
+          "asof": 1793613120,
+          "ttl": 30,
+          "reason": "principal"
+        },
+        "kid": "did:web:warrant.example#k1",
+        "sig": "IIxp3DAzThomAhjZ3ypgxWVqdjx6QJ2V6T71MxO8OpDPE_9nh-t0fz9lppscB3cdqMprgFAO3Pb-f7Pl8XUsDA"
+      },
+      "expect": {
+        "decision": "deny",
+        "reason": "revoked",
+        "failed_step": 3
+      }
+    },
+    {
+      "name": "deny_stale_status",
+      "chain": [
+        "wrt_01JBQ8Z7K4TRPWSE0000000000",
+        "wrt_01JBQ9F3M2FARESCT000000000"
+      ],
+      "action": {
+        "type": "travel:book_flight",
+        "amount": 47800,
+        "ccy": "USD",
+        "counterparty": "iata:SQ",
+        "hash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce",
+        "kid": "did:web:farescout.ai#k1",
+        "sig": "lwelLLrKffKzzt4o7NDhwsw_-UHcN58H0NIH5Jdw4IfIOpcZDm7pazFBq2j40X6tyJ4uoxqUZnsaGsjSSoWoAg"
+      },
+      "status": {
+        "status": {
+          "id": "wrt_01JBQ8Z7K4TRPWSE0000000000",
+          "status": "active",
+          "spent": 0,
+          "asof": 1793612930,
+          "ttl": 30
+        },
+        "kid": "did:web:warrant.example#k1",
+        "sig": "vOTymhizU0qaoKxiuNVZwJPATZmwgKJ7mzGgqDparUhxcXlUu3cgOZ8zhsESMHUMZc4bz-0HKdtRJYLYik1PCg"
+      },
+      "expect": {
+        "decision": "deny",
+        "reason": "stale",
+        "failed_step": 3
+      }
+    },
+    {
+      "name": "deny_out_of_scope_may_not",
+      "chain": [
+        "wrt_01JBQ8Z7K4TRPWSE0000000000"
+      ],
+      "action": {
+        "type": "payments:change_method",
+        "counterparty": "iata:SQ",
+        "hash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce",
+        "kid": "did:web:agents.tripwise.com#k1",
+        "sig": "e7cGi5lnZ-kHHk3C2l7XTAWxRldj3iE6wZYvq8dvphEkHPSpFUajRaLgd1UBoRDfnqSNOdOGy0X5_OmJs4nJDA"
+      },
+      "status": {
+        "status": {
+          "id": "wrt_01JBQ8Z7K4TRPWSE0000000000",
+          "status": "active",
+          "spent": 0,
+          "asof": 1793613120,
+          "ttl": 30
+        },
+        "kid": "did:web:warrant.example#k1",
+        "sig": "twAfQBbtkNu_6nXzojJag6mPMT_OHrca4WVwqRasz7YZPybxBIIR2QFE3XrLPY0mOjikjH7UKmZWfCBQvRPtCg"
+      },
+      "expect": {
+        "decision": "deny",
+        "reason": "out_of_scope",
+        "failed_step": 5
+      }
+    },
+    {
+      "name": "deny_out_of_scope_subagent_hotel",
+      "chain": [
+        "wrt_01JBQ8Z7K4TRPWSE0000000000",
+        "wrt_01JBQ9F3M2FARESCT000000000"
+      ],
+      "action": {
+        "type": "travel:book_hotel",
+        "amount": 47800,
+        "ccy": "USD",
+        "counterparty": "api:booking.com",
+        "hash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce",
+        "kid": "did:web:farescout.ai#k1",
+        "sig": "lwelLLrKffKzzt4o7NDhwsw_-UHcN58H0NIH5Jdw4IfIOpcZDm7pazFBq2j40X6tyJ4uoxqUZnsaGsjSSoWoAg"
+      },
+      "status": {
+        "status": {
+          "id": "wrt_01JBQ8Z7K4TRPWSE0000000000",
+          "status": "active",
+          "spent": 0,
+          "asof": 1793613120,
+          "ttl": 30
+        },
+        "kid": "did:web:warrant.example#k1",
+        "sig": "twAfQBbtkNu_6nXzojJag6mPMT_OHrca4WVwqRasz7YZPybxBIIR2QFE3XrLPY0mOjikjH7UKmZWfCBQvRPtCg"
+      },
+      "expect": {
+        "decision": "deny",
+        "reason": "out_of_scope",
+        "failed_step": 5
+      }
+    },
+    {
+      "name": "deny_over_limit_per_txn",
+      "chain": [
+        "wrt_01JBQ8Z7K4TRPWSE0000000000",
+        "wrt_01JBQ9F3M2FARESCT000000000"
+      ],
+      "action": {
+        "type": "travel:book_flight",
+        "amount": 60001,
+        "ccy": "USD",
+        "counterparty": "iata:SQ",
+        "hash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce",
+        "kid": "did:web:farescout.ai#k1",
+        "sig": "lwelLLrKffKzzt4o7NDhwsw_-UHcN58H0NIH5Jdw4IfIOpcZDm7pazFBq2j40X6tyJ4uoxqUZnsaGsjSSoWoAg"
+      },
+      "status": {
+        "status": {
+          "id": "wrt_01JBQ8Z7K4TRPWSE0000000000",
+          "status": "active",
+          "spent": 0,
+          "asof": 1793613120,
+          "ttl": 30
+        },
+        "kid": "did:web:warrant.example#k1",
+        "sig": "twAfQBbtkNu_6nXzojJag6mPMT_OHrca4WVwqRasz7YZPybxBIIR2QFE3XrLPY0mOjikjH7UKmZWfCBQvRPtCg"
+      },
+      "expect": {
+        "decision": "deny",
+        "reason": "over_limit",
+        "failed_step": 6
+      }
+    },
+    {
+      "name": "deny_over_limit_tree_total",
+      "chain": [
+        "wrt_01JBQ8Z7K4TRPWSE0000000000",
+        "wrt_01JBQ9F3M2FARESCT000000000"
+      ],
+      "action": {
+        "type": "travel:book_flight",
+        "amount": 47800,
+        "ccy": "USD",
+        "counterparty": "iata:SQ",
+        "hash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce",
+        "kid": "did:web:farescout.ai#k1",
+        "sig": "lwelLLrKffKzzt4o7NDhwsw_-UHcN58H0NIH5Jdw4IfIOpcZDm7pazFBq2j40X6tyJ4uoxqUZnsaGsjSSoWoAg"
+      },
+      "status": {
+        "status": {
+          "id": "wrt_01JBQ8Z7K4TRPWSE0000000000",
+          "status": "active",
+          "spent": 20000,
+          "asof": 1793613120,
+          "ttl": 30
+        },
+        "kid": "did:web:warrant.example#k1",
+        "sig": "HeRY8yq1La93rYJhz-4lqr2y2QxCOE2erlbVl1xIQgXB0Hdl3AXestcNhytVvZqLTJAL7KjL5slyLMtLdhNzCA"
+      },
+      "expect": {
+        "decision": "deny",
+        "reason": "over_limit",
+        "failed_step": 6
+      }
+    }
+  ]
+}
