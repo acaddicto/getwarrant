@@ -21,7 +21,7 @@ principal ──signs──▶ mandate ──▶ agent ──sub-mandate──�
 | [`demo`](demo) | Tripwise books a trip: Express airline, FastAPI hotel, two agents, a scripted principal, the live issuer. |
 | `vectors/` | Conformance vectors: mandates, chains, actions, statuses and the verdict a verifier MUST return. |
 
-Spec: *Warrant Protocol Specification v0.1* (to be published as `SPEC.md`).
+Spec: [SPEC.md](SPEC.md), Warrant Protocol Specification v0.1.
 
 ## Wire format for counterparties
 
