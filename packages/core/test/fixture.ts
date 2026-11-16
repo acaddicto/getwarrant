@@ -3,6 +3,7 @@
  * backs the tests and the published test vectors.
  */
 import { keyPairFromSecret, type KeyPair } from "../src/crypto.ts";
+import { b64url } from "../src/canon.ts";
 import { issueMandate, issueRootAssertion } from "../src/mandate.ts";
 import { delegate } from "../src/delegate.ts";
 import { issueStatus } from "../src/status.ts";
@@ -18,7 +19,7 @@ export const T0 = 1793613000; // 2026-11-02T07:50:00Z
 export const T0_MS = T0 * 1000;
 
 export const keys = {
-  principal: keyPairFromSecret("passkey:c2a7", seed(1)),
+  principal: (() => { const k = keyPairFromSecret("", seed(1)); k.kid = "key:" + b64url(k.publicKey); return k; })(),
   issuer: keyPairFromSecret(`${ISSUER_ID}#k1`, seed(2)),
   root: keyPairFromSecret("eudi-wallet:signer-1", seed(3)),
   tripwise: keyPairFromSecret("did:web:agents.tripwise.com#k1", seed(4)),

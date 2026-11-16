@@ -63,16 +63,16 @@ describe("delegation and attenuation", () => {
     expect(widen((c) => (c.principal = { ...c.principal, sub: "someone_else" }))[0]).toMatch(/principal/);
   });
   it("delegate() throws on widening and on depth 0", async () => {
-    expect(() => delegate(tripwise, { agentKey: keys.tripwise, child: { agent: { did: "did:web:farescout.ai" }, scope: { may: ["payments:refund"], counterparties: ["*"] }, limits: {} } })).toThrow(/widened|scope/);
+    expect(() => delegate(tripwise, { agentKey: keys.tripwise, nowMs: T0_MS, child: { agent: { did: "did:web:farescout.ai" }, scope: { may: ["payments:refund"], counterparties: ["*"] }, limits: {} } })).toThrow(/widened|scope/);
     // farescout has max_depth 1: one more level is allowed, and that level gets max_depth 0.
-    const deeper = delegate(farescout, { agentKey: keys.farescout, child: { agent: { did: "did:web:deeper.ai" }, scope: farescout.scope, limits: farescout.limits } });
+    const deeper = delegate(farescout, { agentKey: keys.farescout, nowMs: T0_MS, child: { agent: { did: "did:web:deeper.ai" }, scope: farescout.scope, limits: farescout.limits } });
     expect(deeper.delegation.max_depth).toBe(0);
     const { keyPairFromSecret } = await import("../src/crypto.ts");
     const deeperKey = keyPairFromSecret("did:web:deeper.ai#k1", new Uint8Array(32).fill(9));
-    expect(() => delegate(deeper, { agentKey: deeperKey, child: { agent: { did: "did:web:deepest.ai" }, scope: deeper.scope, limits: deeper.limits } })).toThrow(/max_depth 0/);
+    expect(() => delegate(deeper, { agentKey: deeperKey, nowMs: T0_MS, child: { agent: { did: "did:web:deepest.ai" }, scope: deeper.scope, limits: deeper.limits } })).toThrow(/max_depth 0/);
   });
   it("delegate() refuses a key that does not belong to the parent's agent", () => {
-    expect(() => delegate(tripwise, { agentKey: keys.rogue, child: { agent: { did: "did:web:farescout.ai" }, scope: farescout.scope, limits: farescout.limits } })).toThrow(/does not belong/);
+    expect(() => delegate(tripwise, { agentKey: keys.rogue, nowMs: T0_MS, child: { agent: { did: "did:web:farescout.ai" }, scope: farescout.scope, limits: farescout.limits } })).toThrow(/does not belong/);
   });
   it("effective() is the intersection", () => {
     const eff = effective([tripwise, farescout]);

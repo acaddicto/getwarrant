@@ -3,6 +3,7 @@ import { utf8 } from "./canon.ts";
 import { sign, verify as verifySig, type KeyPair } from "./crypto.ts";
 import { firstBadSignature, parseRootAssertion, signingPayload, validateShape } from "./mandate.ts";
 import { verifyStatusSignature } from "./status.ts";
+import { publicKeyFromKid } from "./keys.ts";
 import { verifyJson } from "./crypto.ts";
 import {
   CLOCK_SKEW_S,
@@ -34,6 +35,8 @@ export interface VerifyContext {
   minLevel?: (action: Action) => AssuranceLevel;
   /** Count of this tree's actions already seen in the current rate window, when the counterparty tracks one. */
   recentActionCount?: number;
+  /** Checked against a passkey-signed hop 0 when set: clientDataJSON.origin and the rpIdHash. Counterparties usually leave this unset. */
+  webauthn?: { origin?: string; rpId?: string };
   /**
    * Hash of an action the principal has already confirmed (the issuer's confirm state is "allow" for it).
    * When it equals action.hash, the amount is treated as already counted in status.spent and check 7 returns allow.
@@ -73,6 +76,10 @@ export function signAction(hash: string, agentKey: KeyPair): { kid: string; sig:
  */
 export function verifyAction(input: VerifyInput, ctx: VerifyContext): Verdict {
   const { chain, action, status } = input;
+  // Self-describing principal keys (key:…, p256:…) never need a directory.
+  const callerKeys = ctx.keys;
+  const keys = (kid: string) => callerKeys(kid) ?? publicKeyFromKid(kid)?.publicKey;
+  ctx = { ...ctx, keys };
   const checks: CheckResult[] = [];
   const root = chain[0];
   const acting = chain[chain.length - 1];
@@ -92,7 +99,7 @@ export function verifyAction(input: VerifyInput, ctx: VerifyContext): Verdict {
   }
   if (root.parent !== undefined) return fail(1, "Signature chain", "hop 1 must not have a parent", "bad_chain");
   if (root.sig[0]?.kid !== root.principal.key) return fail(1, "Signature chain", "principal signature kid does not match principal.key", "bad_signature");
-  const bad = firstBadSignature(root, ctx.keys);
+  const bad = firstBadSignature(root, ctx.keys, ctx.webauthn ?? {});
   if (bad >= 0) return fail(1, "Signature chain", `hop 1 signature ${bad} (${root.sig[bad]?.by ?? "missing"}) does not verify`, "bad_signature");
   for (let i = 1; i < chain.length; i++) {
     const parent = chain[i - 1], child = chain[i];

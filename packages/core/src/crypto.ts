@@ -65,3 +65,63 @@ export function ulid(nowMs = Date.now(), random: () => number = Math.random): st
   for (let i = 0; i < 16; i++) rand += CROCKFORD[Math.floor(random() * 32)];
   return time + rand;
 }
+
+// ---- P-256 / ES256 (passkeys) ------------------------------------------------
+import { p256 } from "@noble/curves/nist.js";
+
+export function generateP256KeyPair(kid: string): KeyPair {
+  const secretKey = p256.utils.randomSecretKey();
+  return { kid, secretKey, publicKey: p256.getPublicKey(secretKey, true) };
+}
+
+export function p256KeyPairFromSecret(kid: string, secretKey: Uint8Array): KeyPair {
+  return { kid, secretKey, publicKey: p256.getPublicKey(secretKey, true) };
+}
+
+/** ECDSA P-256 over SHA-256(message); raw r||s, base64url. */
+export function signP256(message: Uint8Array, secretKey: Uint8Array): string {
+  return b64url(p256.sign(message, secretKey, { prehash: true }));
+}
+
+/** Accepts raw r||s (64 bytes) or ASN.1 DER (what browsers' WebAuthn returns). */
+export function verifyP256(signature: string | Uint8Array, message: Uint8Array, publicKey: Uint8Array): boolean {
+  try {
+    let sig = typeof signature === "string" ? unb64url(signature) : signature;
+    if (sig.length !== 64) sig = derToRaw(sig);
+    return p256.verify(sig, message, publicKey, { prehash: true });
+  } catch {
+    return false;
+  }
+}
+
+/** ASN.1 DER ECDSA-Sig-Value → raw r||s (32 + 32 bytes). */
+export function derToRaw(der: Uint8Array): Uint8Array {
+  if (der[0] !== 0x30) throw new Error("not a DER sequence");
+  let i = 2;
+  if (der[1] & 0x80) i += der[1] & 0x7f;
+  const readInt = () => {
+    if (der[i++] !== 0x02) throw new Error("expected INTEGER");
+    let len = der[i++];
+    if (len & 0x80) { const n = len & 0x7f; len = 0; for (let k = 0; k < n; k++) len = (len << 8) | der[i++]; }
+    let v = der.slice(i, i + len);
+    i += len;
+    while (v.length > 32 && v[0] === 0) v = v.slice(1);
+    if (v.length > 32) throw new Error("integer too long");
+    const out = new Uint8Array(32);
+    out.set(v, 32 - v.length);
+    return out;
+  };
+  const r = readInt(), s = readInt();
+  const raw = new Uint8Array(64);
+  raw.set(r, 0); raw.set(s, 32);
+  return raw;
+}
+
+/** SubjectPublicKeyInfo (as returned by AuthenticatorAttestationResponse.getPublicKey()) → compressed P-256 point. */
+export function p256FromSpki(spki: Uint8Array): Uint8Array {
+  // P-256 SPKI is 91 bytes: 26-byte header then 0x04 || X || Y.
+  const i = spki.indexOf(0x04, spki.length - 65 > 0 ? spki.length - 65 : 0);
+  const point = spki.slice(i, i + 65);
+  if (point.length !== 65 || point[0] !== 0x04) throw new Error("not a P-256 SPKI");
+  return p256.Point.fromBytes(point).toBytes(true);
+}

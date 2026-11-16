@@ -1,5 +1,7 @@
 import { b64url, canonicalize, unb64url, utf8 } from "./canon.ts";
-import { signJson, ulid, verifyJson, type KeyPair } from "./crypto.ts";
+import { signJson, signP256, ulid, verifyJson, type KeyPair } from "./crypto.ts";
+import { publicKeyFromKid } from "./keys.ts";
+import { verifySignatureEntry, type WebAuthnExpectations } from "./sigverify.ts";
 import {
   MANDATE_TYP,
   MAX_DEPTH,
@@ -71,8 +73,8 @@ export function validateShape(m: Partial<Mandate>): string[] {
   return errs;
 }
 
-/** Build and sign a hop-1 mandate: principal signs first, issuer co-signs over the principal's signature. */
-export function issueMandate(draft: MandateDraft, opts: IssueOptions): Mandate {
+/** Build the unsigned hop-1 mandate the principal will be asked to sign. */
+export function buildUnsigned(draft: MandateDraft, opts: { issuerBase: string; id?: string; nowMs?: number }): Mandate {
   const id = opts.id ?? mandateId(opts.nowMs);
   const base = opts.issuerBase.replace(/\/$/, "");
   const unsigned: Mandate = {
@@ -85,36 +87,49 @@ export function issueMandate(draft: MandateDraft, opts: IssueOptions): Mandate {
     sig: [],
   };
   if (unsigned.parent !== undefined) throw new MandateError("malformed", "hop-1 mandates have no parent; use delegate()");
-  if (unsigned.principal.key !== opts.principalKey.kid) throw new MandateError("malformed", "principal.key must match the signing key id");
   const errs = validateShape(unsigned);
   if (errs.length) throw new MandateError("malformed", errs.join("; "));
+  return unsigned;
+}
 
-  const principalSig: Signature = {
-    by: "principal",
-    alg: "EdDSA",
-    kid: opts.principalKey.kid,
-    value: signJson(signingPayload(unsigned, 0), opts.principalKey.secretKey),
-  };
-  const withPrincipal: Mandate = { ...unsigned, sig: [principalSig] };
-  const issuerSig: Signature = {
-    by: "issuer",
-    alg: "EdDSA",
-    kid: opts.issuerKey.kid,
-    value: signJson(signingPayload(withPrincipal, 1), opts.issuerKey.secretKey),
-  };
-  return { ...withPrincipal, sig: [principalSig, issuerSig] };
+/**
+ * Attach the principal's signature (EdDSA, ES256 or ES256 via WebAuthn) after verifying it against principal.key,
+ * then co-sign as issuer over it. This is what an issuer calls when the signature arrives from a browser.
+ */
+export function coSign(unsigned: Mandate, principalSig: Omit<Signature, "by" | "kid"> & { kid?: string }, issuerKey: KeyPair, expect: WebAuthnExpectations = {}): Mandate {
+  if (unsigned.sig.length) throw new MandateError("malformed", "coSign expects an unsigned mandate");
+  const sig: Signature = { by: "principal", alg: principalSig.alg, kid: principalSig.kid ?? unsigned.principal.key, value: principalSig.value, ...(principalSig.webauthn ? { webauthn: principalSig.webauthn } : {}) };
+  if (sig.kid !== unsigned.principal.key) throw new MandateError("bad_signature", "signature kid must equal principal.key");
+  const pk = publicKeyFromKid(sig.kid);
+  if (!pk) throw new MandateError("malformed", "principal.key must be key:<ed25519> or p256:<compressed point>");
+  if (pk.alg !== sig.alg) throw new MandateError("bad_signature", `principal.key is ${pk.alg}, signature is ${sig.alg}`);
+  if (!verifySignatureEntry(sig, signingPayload(unsigned, 0), pk.publicKey, expect)) throw new MandateError("bad_signature", "principal signature does not verify over the mandate");
+  const withPrincipal: Mandate = { ...unsigned, sig: [sig] };
+  const issuerSig: Signature = { by: "issuer", alg: "EdDSA", kid: issuerKey.kid, value: signJson(signingPayload(withPrincipal, 1), issuerKey.secretKey) };
+  return { ...withPrincipal, sig: [sig, issuerSig] };
+}
+
+/** Build and sign a hop-1 mandate with a software Ed25519 principal key: principal signs first, issuer co-signs. */
+export function issueMandate(draft: MandateDraft, opts: IssueOptions): Mandate {
+  const unsigned = buildUnsigned(draft, opts);
+  if (unsigned.principal.key !== opts.principalKey.kid) throw new MandateError("malformed", "principal.key must match the signing key id");
+  const pk = publicKeyFromKid(opts.principalKey.kid);
+  const value = pk?.alg === "ES256" ? signP256(utf8(canonicalize(signingPayload(unsigned, 0))), opts.principalKey.secretKey) : signJson(signingPayload(unsigned, 0), opts.principalKey.secretKey);
+  const alg = pk?.alg ?? "EdDSA";
+  return coSign(unsigned, { alg, value }, opts.issuerKey);
 }
 
 /** Verify every signature in sig[] in order. Returns the index of the first bad one, or -1. */
-export function firstBadSignature(m: Mandate, resolve: KeyResolver): number {
+export function firstBadSignature(m: Mandate, resolve: KeyResolver, expect: WebAuthnExpectations = {}): number {
   if (m.sig.length < 2) return 0;
   if (m.sig[0].by !== "principal" || m.sig[1].by !== "issuer") return 0;
   for (let i = 0; i < m.sig.length; i++) {
     const s = m.sig[i];
     if (i >= 2 && s.by !== "agent") return i;
+    if (i >= 1 && s.alg !== "EdDSA") return i; // issuer and agent hops are Ed25519 in v0.1
     const pk = resolve(s.kid);
     if (!pk) return i;
-    if (!verifyJson(s.value, signingPayload(m, i), pk)) return i;
+    if (!verifySignatureEntry(s, signingPayload(m, i), pk, i === 0 ? expect : {})) return i;
   }
   return -1;
 }

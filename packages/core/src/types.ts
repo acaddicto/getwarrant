@@ -56,16 +56,33 @@ export interface Delegation {
 
 export type SignerRole = "principal" | "issuer" | "agent";
 
+export type SigAlg = "EdDSA" | "ES256";
+
+/**
+ * Present when an ES256 signature was produced by a WebAuthn authenticator (a passkey). The authenticator signs
+ * authenticatorData || SHA-256(clientDataJSON); clientDataJSON.challenge MUST equal base64url(SHA-256(JCS(payload))),
+ * which is what binds the passkey signature to the mandate.
+ */
+export interface WebAuthnEnvelope {
+  /** base64url raw authenticatorData */
+  authenticatorData: string;
+  /** base64url clientDataJSON bytes */
+  clientDataJSON: string;
+}
+
 export interface Signature {
   by: SignerRole;
-  alg: "EdDSA";
+  /** EdDSA = Ed25519 over the JCS payload. ES256 = ECDSA P-256 with SHA-256, raw r||s, over the payload or via WebAuthn. */
+  alg: SigAlg;
   kid: string;
   /** Agent hops only. */
   did?: string;
   /** Agent hops only: when the hop signed. */
   iat?: number;
-  /** base64url Ed25519 signature over the JCS payload with sig[] truncated to the entries before this one. */
+  /** base64url signature. For EdDSA and plain ES256 it covers the JCS payload with sig[] truncated to the entries before this one. */
   value: string;
+  /** ES256 via a passkey: the authenticator's data; `value` then covers authenticatorData || SHA-256(clientDataJSON). */
+  webauthn?: WebAuthnEnvelope;
 }
 
 export interface Mandate {

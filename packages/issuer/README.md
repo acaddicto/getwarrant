@@ -44,8 +44,14 @@ It registers two agents, files a request, approves it as a principal who lowers 
 | Agent | Signs each request body with a key registered at `POST /agents`. Registration is open in v0.1. |
 | Counterparty | No auth to post ledger records; the record must carry the acting agent's signature over the action hash and the verifier's signature over the record. |
 
-Principal keys in v0.1 are software Ed25519 keys named `key:<base64url public key>`. The prototype's passkey ceremony maps onto WebAuthn (P-256), which needs an ES256 path in core and the issuer; that is the next change to this package.
+## Principal keys and the consent page
+
+Principals sign with a passkey. `GET /consent/:request_id` serves the consent page: sign in with an identity root (the development root `demo-wallet` while nothing real is connected), create a passkey (`POST /passkeys/options`, `navigator.credentials.create`, `POST /passkeys`), review and narrow the terms, approve. `prepare` returns the WebAuthn `challenge` (base64url SHA-256 of the JCS payload) and the principal's credential ids; `approve` takes `{ sig: { alg: "ES256", value, webauthn: { authenticatorData, clientDataJSON } } }` and the issuer verifies origin, rp id, challenge and signature before co-signing. Confirm replies take the same shape.
+
+`principal.key` is self-describing: `p256:<compressed point>` for passkeys, `key:<Ed25519 public key>` for software keys (scripts, tests). Counterparties need no directory for either.
+
+The relying party id and origin default to the host the function is served from; set `WARRANT_RP_ID` and `WARRANT_WEBAUTHN_ORIGIN` when a custom domain fronts it.
 
 ## Not here yet
 
-Consent web UI (the prototype is the design), WebAuthn principal keys, DID resolution instead of registered agent keys, push notifications to counterparties on revocation, rate limits on open endpoints.
+A principal dashboard (list, ledger, revoke) in the browser, DID resolution instead of registered agent keys, push notifications to counterparties on revocation, rate limits on open endpoints.

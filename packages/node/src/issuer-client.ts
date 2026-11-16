@@ -1,4 +1,4 @@
-import { unb64url, type SignedStatus } from "@getwarrant/core";
+import { publicKeyFromKid, unb64url, type SignedStatus } from "@getwarrant/core";
 
 export interface IssuerDiscovery {
   issuer: string;
@@ -63,24 +63,12 @@ export class IssuerClient {
     return keys;
   }
 
-  /** A KeyResolver over the issuer's own keys, the agents in `dids`, and software principal keys ("key:<pubkey>"). */
+  /** A KeyResolver over the issuer's own keys, the agents in `dids`, and self-describing principal keys (key:…, p256:…). */
   async resolver(dids: string[]): Promise<(kid: string) => Uint8Array | undefined> {
     const d = await this.discovery();
     const map = new Map<string, Uint8Array>(d.keys.map((k) => [k.kid, unb64url(k.public_key)]));
     for (const did of new Set(dids)) for (const [kid, pk] of await this.agentKeys(did)) map.set(kid, pk);
-    return (kid) => {
-      const hit = map.get(kid);
-      if (hit) return hit;
-      if (kid.startsWith("key:")) {
-        try {
-          const b = unb64url(kid.slice(4));
-          return b.length === 32 ? b : undefined;
-        } catch {
-          return undefined;
-        }
-      }
-      return undefined;
-    };
+    return (kid) => map.get(kid) ?? publicKeyFromKid(kid)?.publicKey;
   }
 
   async postLedger(rootId: string, record: unknown): Promise<{ ref: string; seq: number; hash: string; issuer_sig: string; confirm_ref?: string; poll?: string }> {

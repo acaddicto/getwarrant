@@ -10,10 +10,20 @@ export {
   sha256Hex,
   hashJson,
   ulid,
+  generateP256KeyPair,
+  p256KeyPairFromSecret,
+  signP256,
+  verifyP256,
+  derToRaw,
+  p256FromSpki,
   type KeyPair,
 } from "./crypto.ts";
+export { publicKeyFromKid, kidForEd25519, kidForP256 } from "./keys.ts";
+export { verifySignatureEntry, webauthnChallenge, type WebAuthnExpectations } from "./sigverify.ts";
 export {
   issueMandate,
+  buildUnsigned,
+  coSign,
   encodeMandate,
   decodeMandate,
   validateShape,
