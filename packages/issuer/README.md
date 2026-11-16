@@ -8,10 +8,14 @@ Production instance: `https://vvnvwrefyrrapjhmpajr.supabase.co/functions/v1/warr
 
 ```
 supabase/migrations/0001_init.sql        schema warrant.*: roots, agent_keys, requests, mandates, ledger, confirmations, revocations
+supabase/migrations/0002_passkeys.sql    passkeys, registration challenges
 supabase/functions/warrant/index.ts      the API (routes listed at the top of the file)
+supabase/functions/warrant/consent.ts    the consent page (one HTML string)
 supabase/functions/warrant/deno.json     import map: @getwarrant/core pinned to a GitHub commit
 supabase/functions/warrant/deno.local.json  same map but core from ../../../../core/src for local `deno check`
-scripts/e2e.ts                           full Tripwise walk against a deployed instance
+web/consent.html                         the consent page exported for static hosting (scripts/export-consent.ts)
+scripts/e2e.ts                           full Tripwise walk against a deployed instance (software-key principal)
+scripts/consent-browser.ts               drives the real consent page in Chromium with a virtual passkey
 ```
 
 ## Setup (once per project)
@@ -36,6 +40,14 @@ WARRANT_BASE=https://<ref>.supabase.co/functions/v1/warrant npx tsx scripts/e2e.
 
 It registers two agents, files a request, approves it as a principal who lowers `per_txn`, registers a sub-mandate, has an airline verify and log a booking, trips a confirm on a hotel hold, answers it, checks spend, pulls the signed export, revokes, and confirms the verifier now denies. Every assertion is an API contract.
 
+The passkey path is tested in a real browser:
+
+```
+WARRANT_BASE=https://<ref>.supabase.co/functions/v1/warrant npx tsx scripts/consent-browser.ts
+```
+
+It serves `web/consent.html` on localhost, opens it in headless Chromium with a CDP virtual authenticator, signs in with `demo-wallet`, creates a passkey, lowers the cap, approves, and then has a counterparty verify the resulting ES256/WebAuthn hop 0 with the core verifier alone. Needs Playwright with a Chromium build.
+
 ## Auth model (v0.1)
 
 | Caller | How |
@@ -50,7 +62,10 @@ Principals sign with a passkey. `GET /consent/:request_id` serves the consent pa
 
 `principal.key` is self-describing: `p256:<compressed point>` for passkeys, `key:<Ed25519 public key>` for software keys (scripts, tests). Counterparties need no directory for either.
 
-The relying party id and origin default to the host the function is served from; set `WARRANT_RP_ID` and `WARRANT_WEBAUTHN_ORIGIN` when a custom domain fronts it.
+Two notes from getting this working:
+
+- P-256 signatures from authenticators are not low-S normalised, so the verifier accepts high-S values (`lowS: false`). With the library default about half of all passkey approvals fail with `principal signature does not verify`.
+- The Supabase relay rewrites `text/html` responses from edge functions to `text/plain`, so the consent page cannot be served from `*.supabase.co`. Host `web/consent.html` elsewhere and open it as `consent.html?issuer=<function base>&request=<request_id>`. The page's origin must be the function's own origin, one listed in `WARRANT_ALLOWED_ORIGINS` (comma-separated), or, while the `demo-wallet` root is seeded, `localhost`. The rp id is the page's hostname; passkeys are bound to it, so pick the production origin before anyone registers one. `WARRANT_RP_ID` and `WARRANT_WEBAUTHN_ORIGIN` override the defaults when a custom domain fronts the function. Discovery (`/.well-known/warrant.json`) reports the current values under `webauthn`.
 
 ## Not here yet
 

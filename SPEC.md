@@ -58,7 +58,7 @@ A mandate is a JWS-signed JSON object with media type `application/warrant-manda
 | `parent` | string | for sub-mandates | `id` of the mandate this one is delegated under. Absent at hop 1. |
 | `principal.root` | string | yes | Identity root identifier, e.g. `eudi-wallet`, `aadhaar`, `persona`, `okta:acme.com` |
 | `principal.sub` | string | yes | Pairwise pseudonymous subject from the root. Never a raw national ID. |
-| `principal.key` | string | yes | Public key or passkey credential ID that signs hop 0 |
+| `principal.key` | string | yes | Self-describing public key that signs hop 0: `p256:<base64url compressed P-256 point>` (passkey, ES256) or `key:<base64url Ed25519 public key>` (software key, EdDSA). Verifiers derive the key from the string; no directory lookup. |
 | `principal.assertion` | string | yes | Opaque, root-signed assertion that `sub` was verified, with its own expiry |
 | `agent.did` | string | yes | DID of the agent receiving the mandate |
 | `agent.runtime` | string | no | Attestation of the agent's build or runtime, if the operator provides one |
@@ -83,6 +83,7 @@ A mandate is a JWS-signed JSON object with media type `application/warrant-manda
 - Amounts are integers in minor units (cents, paise). Verifiers MUST NOT accept floats.
 - `may_not` is evaluated before `may`. An action in both is refused.
 - A mandate with no `limits.total` grants no spending authority. Any action carrying an amount is refused under it.
+- Hop 0 signed by a passkey carries a `webauthn` envelope beside `value`. The WebAuthn challenge is `base64url(SHA-256(JCS(payload)))`; the verifier checks `clientDataJSON.type == "webauthn.get"`, the challenge, the user-presence flag and, when it knows them, origin and rp id, then verifies `value` over `authenticatorData || SHA-256(clientDataJSON)`. `value` may be DER or raw `r||s`. Authenticators do not low-S normalise, so verifiers MUST accept high-S signatures.
 - `principal.sub` MUST be pairwise per issuer so that two counterparties cannot correlate a principal across mandates. The issuer holds the mapping to the root subject and releases it only through the dispute process.
 - The consent UI MUST show the principal the final values of `scope`, `limits`, `exp` and `delegation` before signing. The principal's signature covers exactly those values; the agent cannot request more after the fact.
 
@@ -96,7 +97,7 @@ A mandate is a JWS-signed JSON object with media type `application/warrant-manda
   "principal": {
     "root": "eudi-wallet",
     "sub": "pw_7f31c2a9",
-    "key": "passkey:c2a7…",
+    "key": "p256:Au-K4VB96I6…",
     "assertion": "eyJhbGciOi…"
   },
   "agent": { "did": "did:web:agents.tripwise.com", "runtime": "attest:2026.11.1" },
@@ -112,7 +113,7 @@ A mandate is a JWS-signed JSON object with media type `application/warrant-manda
   "revocation": "https://warrant.example/r/wrt_01JBQ8Z7K4TRIPWISE",
   "ledger": "https://warrant.example/l/wrt_01JBQ8Z7K4TRIPWISE",
   "sig": [
-    { "by": "principal", "alg": "ES256", "kid": "passkey:c2a7…", "value": "…" },
+    { "by": "principal", "alg": "ES256", "kid": "p256:Au-K4VB96I6…", "value": "…", "webauthn": { "authenticatorData": "…", "clientDataJSON": "…" } },
     { "by": "issuer", "alg": "EdDSA", "kid": "did:web:warrant.example#k1", "value": "…" }
   ]
 }
@@ -378,7 +379,7 @@ For MCP tools the same three values travel inside the tool arguments as `_warran
 - [ ] Liability text to attach to a mandate so that a signed mandate reads as an authorisation under the principal's local law. Needs counsel in at least EU, US and India.
 - [ ] Whether to allow a `max_depth` above 2 before someone demonstrates a need.
 - [ ] Revocation push: how counterparties subscribe, and whether a verifier that ignores a push it was sent remains conformant.
-- [ ] WebAuthn principal keys: an ES256 signature path for hop 0 so that the principal's key is a real passkey rather than a software Ed25519 key.
+- [x] WebAuthn principal keys: hop 0 is an ES256/WebAuthn signature from a passkey (`p256:` keys). Open: cross-device passkey use when the rp id changes domain; the rp id binds credentials to the consent page's host.
 
 ## Sources
 

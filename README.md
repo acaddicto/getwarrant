@@ -36,10 +36,11 @@ Responses: `200` and the route runs on `allow`; `202 { confirm_ref, poll }` on `
 ## Quick look
 
 ```ts
-import { generateKeyPair, issueRootAssertion, issueMandate, delegate, issueStatus, signAction, verifyAction } from "@getwarrant/core";
+import { generateKeyPair, kidForEd25519, b64url, issueRootAssertion, issueMandate, delegate, issueStatus, signAction, verifyAction } from "@getwarrant/core";
 
-// Keys: the principal's passkey, the issuer, an identity root, two agents.
-const principal = generateKeyPair("passkey:c2a7");
+// Keys: the principal (a software key here; in the browser it is a passkey with a p256:… id), the issuer, an identity root, two agents.
+const sw        = generateKeyPair("tmp");
+const principal = { ...sw, kid: kidForEd25519(sw.publicKey, b64url) }; // key:<public key>, self-describing
 const issuer    = generateKeyPair("did:web:warrant.example#k1");
 const root      = generateKeyPair("eudi-wallet:signer-1");
 const tripwise  = generateKeyPair("did:web:agents.tripwise.com#k1");
