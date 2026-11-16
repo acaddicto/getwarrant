@@ -302,6 +302,18 @@
     }
   },
   "remote": {
+    "https://raw.githubusercontent.com/acaddicto/getwarrant/02703c1452168b1997234c521bdd7cb25ca6b74c/packages/core/src/attenuate.ts": "64f61a25b06ec5dd72a9ce495b7ca4b13bd721b29cf6baeeb8064327b1eaf418",
+    "https://raw.githubusercontent.com/acaddicto/getwarrant/02703c1452168b1997234c521bdd7cb25ca6b74c/packages/core/src/canon.ts": "ec5487a07f3c8127483c1e034342f6063c3eebb8addc60f348c607d034918021",
+    "https://raw.githubusercontent.com/acaddicto/getwarrant/02703c1452168b1997234c521bdd7cb25ca6b74c/packages/core/src/crypto.ts": "eca1715cc7e5b2f46c2e93fd3a3b6afbc78d242606a7138ffa5a0f549724d8ae",
+    "https://raw.githubusercontent.com/acaddicto/getwarrant/02703c1452168b1997234c521bdd7cb25ca6b74c/packages/core/src/delegate.ts": "fbbc07793f911d0347748bd1330cb0bea6998094f1f04b33909ea2551283eb3a",
+    "https://raw.githubusercontent.com/acaddicto/getwarrant/02703c1452168b1997234c521bdd7cb25ca6b74c/packages/core/src/index.ts": "e63fc6f22dee84003e4b28114042877cd16e2bb5e35bd46511f2936ed38996f5",
+    "https://raw.githubusercontent.com/acaddicto/getwarrant/02703c1452168b1997234c521bdd7cb25ca6b74c/packages/core/src/keys.ts": "3fb3585794bb48f76ed25cba348e4ec3f98273c46a2f89dd2bb343170395385e",
+    "https://raw.githubusercontent.com/acaddicto/getwarrant/02703c1452168b1997234c521bdd7cb25ca6b74c/packages/core/src/ledger.ts": "063107580008258bec53a3df81e8182802e1a2090a3265660384c95d497433d4",
+    "https://raw.githubusercontent.com/acaddicto/getwarrant/02703c1452168b1997234c521bdd7cb25ca6b74c/packages/core/src/mandate.ts": "7a67d0af79b4615e3f98861cb335c6c6dc751c91249f30b05d249396cb90d9f2",
+    "https://raw.githubusercontent.com/acaddicto/getwarrant/02703c1452168b1997234c521bdd7cb25ca6b74c/packages/core/src/sigverify.ts": "c09d032c0f537a790439d29944b07d9089b97bf70f8542e5054c0d5e84cb498f",
+    "https://raw.githubusercontent.com/acaddicto/getwarrant/02703c1452168b1997234c521bdd7cb25ca6b74c/packages/core/src/status.ts": "d5d917db5ca83692f7ceded0e27d98d1f2b7416f16feac2976d3926a544ff20f",
+    "https://raw.githubusercontent.com/acaddicto/getwarrant/02703c1452168b1997234c521bdd7cb25ca6b74c/packages/core/src/types.ts": "966346cfdf94c2386edfae8ed6a3e31612a31ffa00832792c48df014b1581c2c",
+    "https://raw.githubusercontent.com/acaddicto/getwarrant/02703c1452168b1997234c521bdd7cb25ca6b74c/packages/core/src/verify.ts": "75f030c5cb0f146a7a5ad45e20aac26ff9addd522ab46081cadda82a7414162e",
     "https://raw.githubusercontent.com/acaddicto/getwarrant/77136664797133935b601af75da43408fc2a6f8c/packages/core/src/attenuate.ts": "64f61a25b06ec5dd72a9ce495b7ca4b13bd721b29cf6baeeb8064327b1eaf418",
     "https://raw.githubusercontent.com/acaddicto/getwarrant/77136664797133935b601af75da43408fc2a6f8c/packages/core/src/canon.ts": "ec5487a07f3c8127483c1e034342f6063c3eebb8addc60f348c607d034918021",
     "https://raw.githubusercontent.com/acaddicto/getwarrant/77136664797133935b601af75da43408fc2a6f8c/packages/core/src/crypto.ts": "91e2c296dc16e08f65e27cde7ca58bc4fcf72b8c214be384c4ed674086e24f6a",

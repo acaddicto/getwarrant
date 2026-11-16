@@ -92,6 +92,8 @@ const CONSENT_BASE = env("WARRANT_CONSENT_BASE", false) || `${PUBLIC_BASE}/conse
 const RP_ID = env("WARRANT_RP_ID", false) || new URL(CONSENT_BASE).hostname;
 const WEBAUTHN_ORIGIN = env("WARRANT_WEBAUTHN_ORIGIN", false) || new URL(CONSENT_BASE).origin;
 const WEBAUTHN_EXPECT = { origin: WEBAUTHN_ORIGIN, rpId: RP_ID };
+// Extra origins allowed to host the consent page (comma-separated), e.g. https://getwarrant.dev
+const ALLOWED_ORIGINS = env("WARRANT_ALLOWED_ORIGINS", false).split(",").map((s) => s.trim()).filter(Boolean);
 
 const db = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), { db: { schema: "warrant" }, auth: { persistSession: false } });
 
@@ -135,13 +137,34 @@ function asSignature(sig: unknown): Omit<Signature, "by" | "kid"> | null {
 const randomB64 = (n = 32) => b64url(crypto.getRandomValues(new Uint8Array(n)));
 
 async function principalPasskeys(p: PrincipalCtx) {
-  const { data } = await db.from("passkeys").select("credential_id, kid, label, created_at, last_used_at").eq("principal_root", p.root).eq("principal_sub", p.sub).order("created_at");
+  const { data } = await db.from("passkeys").select("credential_id, kid, rp_id, label, created_at, last_used_at").eq("principal_root", p.root).eq("principal_sub", p.sub).order("created_at");
   return data ?? [];
 }
 
 async function trustedRoot(rootId: string) {
   const { data } = await db.from("roots").select("*").eq("id", rootId).maybeSingle();
   return data;
+}
+
+const DEMO_ROOT_KEY = kpFromSecret("demo-wallet:signer-1", new Uint8Array(32).map((_, i) => (i * 11 + 100 * 29) % 256));
+/** Development mode is "the demo-wallet root is seeded". Remove that row and every dev allowance below goes away. */
+async function devMode(): Promise<boolean> {
+  const root = await trustedRoot("demo-wallet");
+  return !!root && root.public_key === b64url(DEMO_ROOT_KEY.publicKey);
+}
+
+/**
+ * WebAuthn expectations for this request. The consent page may be hosted on this function's own origin, on an
+ * origin listed in WARRANT_ALLOWED_ORIGINS, or (in development mode only) on localhost. The rp id is the page's host.
+ */
+async function webauthnExpect(req: Request): Promise<{ origin: string; rpId: string }> {
+  const origin = req.headers.get("origin");
+  if (!origin || origin === WEBAUTHN_ORIGIN) return WEBAUTHN_EXPECT;
+  let u: URL;
+  try { u = new URL(origin); } catch { throw new HttpError(403, "bad_origin", `origin ${origin}`); }
+  const local = (u.hostname === "localhost" || u.hostname === "127.0.0.1") && (await devMode());
+  if (!ALLOWED_ORIGINS.includes(origin) && !local) throw new HttpError(403, "bad_origin", `origin ${origin} may not host the consent page`);
+  return { origin, rpId: u.hostname };
 }
 
 interface PrincipalCtx {
@@ -230,7 +253,7 @@ async function route(req: Request, path: string): Promise<Response> {
       keys: [{ kid: ISSUER_KEY.kid, alg: "EdDSA", public_key: b64url(ISSUER_KEY.publicKey) }],
       endpoints: { requests: `${PUBLIC_BASE}/requests`, mandates: `${PUBLIC_BASE}/mandates`, verify: `${PUBLIC_BASE}/verify`, agents: `${PUBLIC_BASE}/agents/{did}`, status: `${PUBLIC_BASE}/r/{id}`, ledger: `${PUBLIC_BASE}/l/{id}`, revocations: `${PUBLIC_BASE}/revocations`, confirm: `${PUBLIC_BASE}/confirm/{ref}`, consent: `${CONSENT_BASE}/{request_id}` },
       principal_auth: "Authorization: Warrant-Principal <root assertion token>",
-      webauthn: { rp_id: RP_ID, origin: WEBAUTHN_ORIGIN, alg: "ES256" },
+      webauthn: { rp_id: RP_ID, origin: WEBAUTHN_ORIGIN, allowed_origins: ALLOWED_ORIGINS, alg: "ES256", note: "the consent page cannot be served from *.supabase.co (the relay forces text/plain); host it on an allowed origin" },
     });
   }
   if (method === "GET" && path === "/roots") {
@@ -245,9 +268,8 @@ async function route(req: Request, path: string): Promise<Response> {
 
   // --- dev root (demo-wallet) ---
   if (method === "POST" && path === "/dev/assertion") {
-    const root = await trustedRoot("demo-wallet");
-    const demoKey = kpFromSecret("demo-wallet:signer-1", new Uint8Array(32).map((_, i) => (i * 11 + 100 * 29) % 256));
-    if (!root || root.public_key !== b64url(demoKey.publicKey)) throw new HttpError(404, "no_route", "demo-wallet root is not seeded on this issuer");
+    if (!(await devMode())) throw new HttpError(404, "no_route", "demo-wallet root is not seeded on this issuer");
+    const demoKey = DEMO_ROOT_KEY;
     const b = await body<{ sub?: string }>(req).catch(() => ({} as any));
     const sub = (b.sub ?? "").toString().trim();
     if (!/^[a-zA-Z0-9 ._-]{2,40}$/.test(sub)) throw new HttpError(400, "malformed", "sub: 2-40 chars, letters, digits, space . _ -");
@@ -259,19 +281,21 @@ async function route(req: Request, path: string): Promise<Response> {
   // --- principal: who am I, passkeys ---
   if (method === "GET" && path === "/me") {
     const p = await requirePrincipal(req);
-    return json(200, { root: p.root, sub: p.sub, level: p.level, issuer: ISSUER_DID, rp_id: RP_ID, passkeys: await principalPasskeys(p) });
+    const w = await webauthnExpect(req);
+    return json(200, { root: p.root, sub: p.sub, level: p.level, issuer: ISSUER_DID, rp_id: w.rpId, passkeys: (await principalPasskeys(p)).filter((k) => k.rp_id === w.rpId) });
   }
   if (method === "POST" && path === "/passkeys/options") {
     const p = await requirePrincipal(req);
     const challenge = randomB64();
     const { error } = await db.from("challenges").insert({ challenge, purpose: "register", principal_root: p.root, principal_sub: p.sub });
     if (error) throw new HttpError(500, "db", error.message);
-    const existing = await principalPasskeys(p);
+    const w = await webauthnExpect(req);
+    const existing = (await principalPasskeys(p)).filter((k) => k.rp_id === w.rpId);
     const userId = b64url(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${p.root}|${p.sub}`))));
     return json(200, {
       publicKey: {
         challenge,
-        rp: { id: RP_ID, name: "Warrant" },
+        rp: { id: w.rpId, name: "Warrant" },
         user: { id: userId, name: `${p.sub}@${p.root}`, displayName: p.sub },
         pubKeyCredParams: [{ type: "public-key", alg: -7 }],
         authenticatorSelection: { residentKey: "preferred", userVerification: "preferred" },
@@ -288,7 +312,8 @@ async function route(req: Request, path: string): Promise<Response> {
     let cdj: { type?: string; challenge?: string; origin?: string };
     try { cdj = JSON.parse(new TextDecoder().decode(unb64url(b.client_data_json))); } catch { throw new HttpError(400, "malformed", "client_data_json"); }
     if (cdj.type !== "webauthn.create") throw new HttpError(400, "malformed", "clientDataJSON.type must be webauthn.create");
-    if (cdj.origin !== WEBAUTHN_ORIGIN) throw new HttpError(400, "bad_origin", `origin ${cdj.origin} is not ${WEBAUTHN_ORIGIN}`);
+    const w = await webauthnExpect(req);
+    if (cdj.origin !== w.origin) throw new HttpError(400, "bad_origin", `origin ${cdj.origin} is not ${w.origin}`);
     const { data: ch } = await db.from("challenges").select("*").eq("challenge", cdj.challenge ?? "").eq("purpose", "register").maybeSingle();
     if (!ch || ch.principal_root !== p.root || ch.principal_sub !== p.sub) throw new HttpError(400, "bad_challenge", "unknown or foreign challenge");
     await db.from("challenges").delete().eq("challenge", ch.challenge);
@@ -296,7 +321,7 @@ async function route(req: Request, path: string): Promise<Response> {
     let point: Uint8Array;
     try { point = p256FromSpki(unb64url(b.public_key_spki)); } catch { throw new HttpError(400, "malformed", "public_key_spki is not a P-256 SubjectPublicKeyInfo"); }
     const kid = "p256:" + b64url(point);
-    const { error } = await db.from("passkeys").insert({ credential_id: b.credential_id, principal_root: p.root, principal_sub: p.sub, kid, public_key: b64url(point), rp_id: RP_ID, label: b.label ?? null });
+    const { error } = await db.from("passkeys").insert({ credential_id: b.credential_id, principal_root: p.root, principal_sub: p.sub, kid, public_key: b64url(point), rp_id: w.rpId, label: b.label ?? null });
     if (error) throw new HttpError(error.code === "23505" ? 409 : 500, "db", error.message);
     return json(201, { credential_id: b.credential_id, kid });
   }
@@ -393,7 +418,7 @@ async function route(req: Request, path: string): Promise<Response> {
       alg: keyInfo.alg,
       // For passkeys: navigator.credentials.get({ publicKey: { challenge, rpId, allowCredentials } })
       challenge: webauthnChallenge(payload),
-      rp_id: RP_ID,
+      rp_id: (await webauthnExpect(req)).rpId,
       allow_credentials: passkeys.filter((k) => k.kid === b.key).map((k) => ({ type: "public-key", id: k.credential_id })),
     });
   }
@@ -408,7 +433,7 @@ async function route(req: Request, path: string): Promise<Response> {
     if (!sig) throw new HttpError(400, "malformed", "sig must be an EdDSA value or { alg, value, webauthn? }");
     const unsigned = r.unsigned as Mandate;
     let mandate: Mandate;
-    try { mandate = coSign(unsigned, sig, ISSUER_KEY, WEBAUTHN_EXPECT); } catch (e) { throw new HttpError(400, (e as any).code ?? "bad_signature", (e as Error).message); }
+    try { mandate = coSign(unsigned, sig, ISSUER_KEY, await webauthnExpect(req)); } catch (e) { throw new HttpError(400, (e as any).code ?? "bad_signature", (e as Error).message); }
     if (sig.webauthn) await db.from("passkeys").update({ last_used_at: new Date().toISOString() }).eq("kid", unsigned.principal.key);
     const token = encodeMandate(mandate);
     const { error } = await db.from("mandates").insert({
@@ -614,7 +639,7 @@ async function route(req: Request, path: string): Promise<Response> {
     const keyInfo = publicKeyFromKid(m.principal.key);
     if (!sig || !keyInfo) throw new HttpError(400, "malformed", "sig");
     const signedBody = { confirm: c.ref, mandate: c.mandate_id, action_hash: c.action_hash, amount: c.amount, reply: b.reply };
-    if (sig.alg !== keyInfo.alg || !verifySignatureEntry({ by: "principal", kid: m.principal.key, ...sig }, signedBody, keyInfo.publicKey, WEBAUTHN_EXPECT))
+    if (sig.alg !== keyInfo.alg || !verifySignatureEntry({ by: "principal", kid: m.principal.key, ...sig }, signedBody, keyInfo.publicKey, await webauthnExpect(req)))
       throw new HttpError(400, "bad_signature", "sig must cover " + canonicalize(signedBody) + (keyInfo.alg === "ES256" ? " (WebAuthn challenge = base64url(sha256 of that))" : ""));
     const replySigStored = typeof b.sig === "string" ? b.sig : JSON.stringify(sig);
     const { error } = await db.from("confirmations").update({ state: b.reply, reply_sig: replySigStored, replied_at: new Date().toISOString() }).eq("ref", c.ref).eq("state", "pending");

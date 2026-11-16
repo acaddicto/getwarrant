@@ -88,7 +88,8 @@ export function verifyP256(signature: string | Uint8Array, message: Uint8Array, 
   try {
     let sig = typeof signature === "string" ? unb64url(signature) : signature;
     if (sig.length !== 64) sig = derToRaw(sig);
-    return p256.verify(sig, message, publicKey, { prehash: true });
+    // WebAuthn authenticators do not normalise S; accept high-S signatures (lowS: false), unlike noble's default.
+    return p256.verify(sig, message, publicKey, { prehash: true, lowS: false });
   } catch {
     return false;
   }

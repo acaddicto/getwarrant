@@ -70,8 +70,10 @@ pre{margin:0;font-family:var(--mono);font-size:11.5px;white-space:pre-wrap;overf
   const fmt = (minor, ccy) => (ccy ? new Intl.NumberFormat(undefined, { style: "currency", currency: ccy }).format(minor / 100) : String(minor));
   const b64u = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\\+/g, "-").replace(/\\//g, "_").replace(/=+$/, "");
   const unb64u = (s) => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - (s.length % 4)) % 4)), (c) => c.charCodeAt(0));
-  const BASE = location.pathname.replace(/\\/consent\\/.*$/, "");
-  const REQ = location.pathname.split("/consent/")[1]?.split(/[/?#]/)[0];
+  // Served by the issuer at /consent/:id, or hosted anywhere as consent.html?issuer=<base>&request=<id>.
+  const Q = new URLSearchParams(location.search);
+  const BASE = (Q.get("issuer") || location.origin + location.pathname.replace(/\\/consent(\\/.*)?$/, "")).replace(/\\/$/, "");
+  const REQ = Q.get("request") || location.pathname.split("/consent/")[1]?.split(/[/?#]/)[0];
   const AUTH_KEY = "warrant.assertion";
   let assertion = sessionStorage.getItem(AUTH_KEY) || "";
   const api = async (method, path, body, auth = true) => {
